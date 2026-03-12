@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MÁS · Meta Ads Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#f7f5f0; font-family:'Montserrat',sans-serif; }
+    button { font-family:inherit; cursor:pointer; }
+    .drop-zone { border:2px dashed #e8e8e8; border-radius:14px; padding:32px 24px; text-align:center; transition:all 0.2s; background:#fff; }
+    .drop-zone.active { border-color:#29ABE2; background:#29ABE215; }
+    .drop-zone.done { border-color:#29ABE2; border-style:solid; background:#29ABE208; }
+    .drop-zone.error { border-color:#E91E8C; background:#E91E8C08; }
+    input[type=file] { display:none; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useCallback, useRef } = React;
+    const LOGO_SRC = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAQHB9ADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAj/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AIyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//Z";
+    const C = { black:"#0a0a0a", white:"#ffffff", cream:"#f7f5f0", pink:"#E91E8C", blue:"#29ABE2", orange:"#F7941D", gray:"#888", lightGray:"#e8e8e8", darkGray:"#333" };
+
+    // ── CSV PARSERS ──────────────────────────────────────────
+    function parseCampaigns(rows) {
+      return rows
+        .filter(r => r["Nombre de la campaña"] && r["Resultados"] && parseFloat(r["Resultados"]) > 0)
+        .map(r => ({
+          nombre: r["Nombre de la campaña"].replace(/^26\|/, "").replace(/\|/g," | "),
+          leads: parseFloat(r["Resultados"]) || 0,
+          cpl: parseFloat(r["Costo por resultados"]) || 0,
+          gasto: parseFloat(r["Importe gastado (CLP)"]) || 0,
+          impresiones: parseFloat(r["Impresiones"]) || 0,
+          alcance: parseFloat(r["Alcance"]) || 0,
+          frecuencia: parseFloat(r["Frecuencia"]) || 0,
+          estado: r["Entrega de la campaña"] || "",
+        }))
+        .sort((a,b) => b.cpl - a.cpl);
+    }
+
+    function parseAdSets(rows) {
+      return rows
+        .filter(r => r["Nombre del conjunto de anuncios"] && parseFloat(r["Importe gastado (CLP)"]) > 0)
+        .map(r => ({
+          nombre: r["Nombre del conjunto de anuncios"],
+          leads: parseFloat(r["Resultados"]) || 0,
+          cpl: parseFloat(r["Costo por resultados"]) || 0,
+          gasto: parseFloat(r["Importe gastado (CLP)"]) || 0,
+          alcance: parseFloat(r["Alcance"]) || 0,
+          frecuencia: parseFloat(r["Frecuencia"]) || 0,
+          estado: r["Entrega del conjunto de anuncios"] || "",
+          cpm: parseFloat(r["CPM (costo por mil impresiones) (CLP)"]) || 0,
+        }))
+        .filter(r => r.gasto > 0);
+    }
+
+    function parseAds(rows) {
+      return rows
+        .filter(r => r["Nombre del anuncio"] && parseFloat(r["Importe gastado (CLP)"]) > 0)
+        .map(r => ({
+          nombre: r["Nombre del anuncio"],
+          leads: parseFloat(r["Resultados"]) || 0,
+          cpl: parseFloat(r["Costo por resultados"]) || 0,
+          gasto: parseFloat(r["Importe gastado (CLP)"]) || 0,
+          alcance: parseFloat(r["Alcance"]) || 0,
+          frecuencia: parseFloat(r["Frecuencia"]) || 0,
+          conjunto: r["Nombre del conjunto de anuncios"] || "",
+          calidad: r["Clasificación de calidad"] || "-",
+          engagement: r["Clasificación del porcentaje de interacción"] || "-",
+          conversion: r["Clasificación del porcentaje de conversiones"] || "-",
+          estado: r["Entrega del anuncio"] || "",
+        }))
+        .filter(r => r.gasto > 0);
+    }
+
+    // ── HELPERS ──────────────────────────────────────────────
+    const cplCol = (cpl, avg) => {
+      if (!avg) return C.blue;
+      return cpl > avg*3 ? C.pink : cpl > avg*1.5 ? C.orange : cpl > avg ? "#aaa" : C.blue;
+    };
+
+    const CPLBar = ({ cpl, max, avg }) => {
+      const pct = Math.min((cpl/max)*100, 100);
+      const col = cplCol(cpl, avg);
+      return (
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ flex:1, height:3, background:C.lightGray, borderRadius:2 }}>
+            <div style={{ width:`${pct}%`, height:"100%", background:col, borderRadius:2 }} />
+          </div>
+          <span style={{ fontSize:13, fontWeight:700, color:col, minWidth:85, textAlign:"right", fontFamily:"monospace" }}>
+            ${cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}
+          </span>
+        </div>
+      );
+    };
+
+    const ScoreBadge = ({ val }) => {
+      if (!val || val === "-" || val.trim() === "") return <span style={{ color:"#ccc", fontSize:11 }}>—</span>;
+      const isUp = val.toLowerCase().includes("encima") || val.toLowerCase().includes("above");
+      const isDown = val.toLowerCase().includes("abajo") || val.toLowerCase().includes("below");
+      const col = isUp ? C.blue : isDown ? C.pink : C.orange;
+      const icon = isUp ? "↑" : isDown ? "↓" : "→";
+      const label = isUp ? "Encima" : isDown ? (val.includes("35") ? "Abajo -35%" : "Abajo -20%") : "Promedio";
+      return <span style={{ background:col+"18", color:col, fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:100, fontFamily:"monospace" }}>{icon} {label}</span>;
+    };
+
+    const Pill = ({ children, color }) => (
+      <span style={{ background:color+"18", color, fontSize:9, fontWeight:700, letterSpacing:"0.1em", padding:"3px 9px", borderRadius:100, textTransform:"uppercase" }}>{children}</span>
+    );
+
+    // ── UPLOAD ZONE ──────────────────────────────────────────
+    const UploadZone = ({ label, icon, description, status, onFile }) => {
+      const [drag, setDrag] = useState(false);
+      const ref = useRef();
+      const cls = status === "ok" ? "done" : status === "error" ? "error" : drag ? "active" : "";
+
+      const handle = (file) => {
+        if (!file || !file.name.endsWith(".csv")) { onFile(null, "error"); return; }
+        Papa.parse(file, {
+          header: true, skipEmptyLines: true,
+          complete: (res) => onFile(res.data, "ok"),
+          error: () => onFile(null, "error"),
+        });
+      };
+
+      return (
+        <div
+          className={`drop-zone ${cls}`}
+          onDragOver={e => { e.preventDefault(); setDrag(true); }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={e => { e.preventDefault(); setDrag(false); handle(e.dataTransfer.files[0]); }}
+          onClick={() => ref.current.click()}
+          style={{ cursor:"pointer" }}
+        >
+          <input ref={ref} type="file" accept=".csv" onChange={e => handle(e.target.files[0])} />
+          <div style={{ fontSize:28, marginBottom:10 }}>{status==="ok" ? "✅" : status==="error" ? "❌" : icon}</div>
+          <div style={{ fontSize:14, fontWeight:700, color:status==="ok"?C.blue:C.black, marginBottom:6 }}>{label}</div>
+          <div style={{ fontSize:12, color:C.gray, lineHeight:1.5 }}>{status==="ok" ? "Archivo cargado correctamente · Haz clic para reemplazar" : description}</div>
+        </div>
+      );
+    };
+
+    // ── MAIN APP ─────────────────────────────────────────────
+    function App() {
+      const [activeTab, setActiveTab] = useState("upload");
+      const [expandedCard, setExpandedCard] = useState(null);
+      const [fileStatus, setFileStatus] = useState({ camps:"", adsets:"", ads:"" });
+      const [data, setData] = useState({ campaigns:[], adSets:[], ads:[] });
+
+      const handleFile = (key, parser) => (rows, status) => {
+        setFileStatus(s => ({ ...s, [key]: status }));
+        if (status === "ok") {
+          const parsed = parser(rows);
+          setData(d => ({ ...d, [key==="camps"?"campaigns":key==="adsets"?"adSets":"ads"]: parsed }));
+        }
+      };
+
+      const allLoaded = fileStatus.camps==="ok" || fileStatus.adsets==="ok" || fileStatus.ads==="ok";
+      const { campaigns, adSets, ads } = data;
+
+      // Computed stats
+      const totalGasto = campaigns.reduce((a,c)=>a+c.gasto,0);
+      const totalLeads = campaigns.reduce((a,c)=>a+c.leads,0);
+      const avgCPL = totalLeads > 0 ? Math.round(totalGasto/totalLeads) : 0;
+      const bestCPL = campaigns.filter(c=>c.leads>0).reduce((best,c) => c.cpl < best.cpl ? c : best, campaigns.find(c=>c.leads>0)||{cpl:0});
+      const worstCPL = campaigns.reduce((worst,c) => c.cpl > worst.cpl ? c : worst, {cpl:0});
+
+      // Worst campaigns = CPL > 2x average, active
+      const criticalCamps = campaigns.filter(c => c.leads > 0 && c.cpl > avgCPL * 2).slice(0,5);
+
+      // Top/worst ads
+      const topAds = [...ads].filter(a=>a.leads>0).sort((a,b)=>a.cpl-b.cpl).slice(0,6);
+      const worstAds = [...ads].filter(a=>a.leads>0).sort((a,b)=>b.cpl-a.cpl).slice(0,5);
+
+      // Audience correlation
+      const adSetsWithLeads = adSets.filter(a=>a.leads>0).sort((a,b)=>b.alcance-a.alcance);
+
+      const tabs = [
+        { id:"upload", label:"📂 Importar datos" },
+        { id:"overview", label:"Panorama" },
+        { id:"anuncios", label:"Creativos" },
+        { id:"worst", label:"Campañas críticas" },
+        { id:"advplus", label:"Adv+ vs Intereses" },
+      ];
+
+      return (
+        <div style={{ minHeight:"100vh", background:C.cream, paddingBottom:80 }}>
+
+          {/* HEADER */}
+          <div style={{ background:C.black, padding:"0 40px" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:24, flexWrap:"wrap", gap:12 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:18 }}>
+                <img src={LOGO_SRC} alt="MÁS" style={{ height:32, filter:"invert(1)", objectFit:"contain" }} />
+                <div style={{ width:1, height:30, background:"#2a2a2a" }} />
+                <div>
+                  <div style={{ fontSize:11, color:"#555", letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:700 }}>Meta Ads Dashboard</div>
+                  {allLoaded && <div style={{ fontSize:11, color:"#333", marginTop:1 }}>
+                    {campaigns.length > 0 && `${campaigns.length} campañas · ${totalLeads} leads · CLP ${(totalGasto/1000000).toFixed(2)}M`}
+                  </div>}
+                </div>
+              </div>
+              {allLoaded && (
+                <div style={{ display:"flex", gap:8 }}>
+                  {criticalCamps.length > 0 && (
+                    <div style={{ display:"flex", alignItems:"center", gap:8, background:C.pink+"20", border:`1px solid ${C.pink}40`, borderRadius:8, padding:"7px 14px" }}>
+                      <div style={{ width:7, height:7, borderRadius:"50%", background:C.pink }} />
+                      <span style={{ fontSize:11, color:C.pink, fontWeight:700, letterSpacing:"0.08em" }}>{criticalCamps.length} CAMPAÑAS CRÍTICAS</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div style={{ display:"flex", height:3, marginTop:20 }}>
+              <div style={{ flex:1, background:C.pink }} /><div style={{ flex:1, background:C.blue }} /><div style={{ flex:1, background:C.orange }} />
+            </div>
+            <div style={{ display:"flex", flexWrap:"wrap" }}>
+              {tabs.map(tab => (
+                <button key={tab.id} onClick={()=>setActiveTab(tab.id)} style={{ background:"transparent", color:activeTab===tab.id?C.white:"#555", border:"none", borderBottom:`3px solid ${activeTab===tab.id?C.pink:"transparent"}`, padding:"13px 20px", fontSize:13, fontWeight:600, letterSpacing:"0.04em", transition:"all 0.2s" }}>{tab.label}</button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ padding:"36px 40px" }}>
+
+            {/* ── UPLOAD TAB ── */}
+            {activeTab==="upload" && (
+              <div style={{ maxWidth:820, margin:"0 auto" }}>
+                <div style={{ marginBottom:28 }}>
+                  <h2 style={{ fontSize:22, fontWeight:700, marginBottom:8 }}>Importar reportes de Meta Ads</h2>
+                  <p style={{ fontSize:14, color:C.gray, lineHeight:1.7 }}>
+                    Exporta los 3 reportes desde <strong>Meta Ads Manager</strong> en formato CSV y cárgalos aquí. El dashboard se actualiza automáticamente con tus nuevos datos.
+                  </p>
+                </div>
+
+                {/* Upload zones */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:16, marginBottom:32 }}>
+                  <UploadZone
+                    label="Campañas" icon="📊"
+                    description="Exportar desde nivel Campañas en Ads Manager · CSV"
+                    status={fileStatus.camps}
+                    onFile={handleFile("camps", parseCampaigns)}
+                  />
+                  <UploadZone
+                    label="Conjuntos de anuncios" icon="🗂"
+                    description="Exportar desde nivel Conjuntos de anuncios · CSV"
+                    status={fileStatus.adsets}
+                    onFile={handleFile("adsets", parseAdSets)}
+                  />
+                  <UploadZone
+                    label="Anuncios" icon="🎨"
+                    description="Exportar desde nivel Anuncios · CSV"
+                    status={fileStatus.ads}
+                    onFile={handleFile("ads", parseAds)}
+                  />
+                </div>
+
+                {/* How to export */}
+                <div style={{ background:C.white, borderRadius:14, padding:"24px 28px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", marginBottom:20 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:C.black, marginBottom:16 }}>¿Cómo exportar desde Meta Ads Manager?</div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                    {[
+                      { paso:"1", txt:"Abre Meta Ads Manager y selecciona el rango de fechas que quieres analizar" },
+                      { paso:"2", txt:"En la vista de Campañas, haz clic en el botón Exportar (↓) → Exportar datos de la tabla → CSV" },
+                      { paso:"3", txt:"Repite el proceso cambiando a la vista Conjuntos de anuncios y luego Anuncios" },
+                      { paso:"4", txt:"Arrastra o selecciona cada archivo en las zonas de arriba — el dashboard se actualiza al instante" },
+                    ].map((s,i) => (
+                      <div key={i} style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+                        <div style={{ width:26, height:26, borderRadius:"50%", background:C.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:C.white, flexShrink:0 }}>{s.paso}</div>
+                        <div style={{ fontSize:13, color:C.darkGray, lineHeight:1.6, paddingTop:3 }}>{s.txt}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tip */}
+                <div style={{ background:C.blue+"10", border:`1.5px solid ${C.blue}25`, borderLeft:`4px solid ${C.blue}`, borderRadius:12, padding:"16px 20px" }}>
+                  <div style={{ fontSize:11, color:C.blue, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:6 }}>💡 Tip</div>
+                  <p style={{ margin:0, fontSize:13, color:C.darkGray, lineHeight:1.7 }}>
+                    No necesitas cargar los 3 archivos a la vez. Con solo el reporte de Campañas ya puedes ver el Panorama general y las Campañas críticas. Los Creativos requieren el reporte de Anuncios.
+                  </p>
+                </div>
+
+                {allLoaded && (
+                  <div style={{ marginTop:20, background:C.black, borderRadius:12, padding:"18px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:700, color:C.white }}>¡Datos cargados! Tu dashboard está listo.</div>
+                      <div style={{ fontSize:12, color:"#555", marginTop:3 }}>{campaigns.length} campañas · {adSets.length} conjuntos · {ads.length} anuncios</div>
+                    </div>
+                    <button onClick={()=>setActiveTab("overview")} style={{ background:C.pink, color:C.white, border:"none", borderRadius:8, padding:"10px 22px", fontSize:13, fontWeight:700, letterSpacing:"0.04em" }}>Ver Panorama →</button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── OVERVIEW ── */}
+            {activeTab==="overview" && (
+              <div>
+                {campaigns.length === 0 ? (
+                  <EmptyState onUpload={()=>setActiveTab("upload")} />
+                ) : (
+                  <>
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:14, marginBottom:32 }}>
+                      {[
+                        { label:"Gasto total", value:`CLP ${(totalGasto/1000000).toFixed(2)}M`, accent:C.black },
+                        { label:"Total leads", value:totalLeads, accent:C.blue },
+                        { label:"CPL promedio", value:`$${avgCPL.toLocaleString("es-CL")}`, accent:C.blue },
+                        { label:"Mejor CPL", value:bestCPL.cpl?`$${bestCPL.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}`:"—", sub:bestCPL.nombre, accent:C.blue },
+                        { label:"Peor CPL", value:worstCPL.cpl?`$${worstCPL.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}`:"—", sub:worstCPL.nombre, accent:C.pink },
+                        { label:"Campañas críticas", value:criticalCamps.length, sub:`CPL > 2× promedio`, accent:C.orange },
+                      ].map((k,i) => (
+                        <div key={i} style={{ background:C.white, borderRadius:12, padding:"18px 16px", borderTop:`4px solid ${k.accent}`, boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+                          <div style={{ fontSize:10, color:C.gray, letterSpacing:"0.14em", textTransform:"uppercase", fontWeight:700, marginBottom:8 }}>{k.label}</div>
+                          <div style={{ fontSize:20, fontWeight:700, color:k.accent===C.black?C.black:k.accent }}>{k.value}</div>
+                          {k.sub && <div style={{ fontSize:10, color:C.gray, marginTop:4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{k.sub}</div>}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ background:C.white, borderRadius:14, padding:"26px 28px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", marginBottom:20 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:22, flexWrap:"wrap", gap:10 }}>
+                        <div>
+                          <div style={{ fontSize:16, fontWeight:700 }}>Ranking de campañas por CPL</div>
+                          <div style={{ fontSize:12, color:C.gray, marginTop:3 }}>De peor a mejor · CPL promedio: ${avgCPL.toLocaleString("es-CL")}</div>
+                        </div>
+                        <div style={{ display:"flex", gap:14 }}>
+                          {[[C.pink,"Crítico"],[C.orange,"Atención"],[C.blue,"Óptimo"]].map(([col,lbl],i) => (
+                            <div key={i} style={{ display:"flex", alignItems:"center", gap:6 }}>
+                              <div style={{ width:8, height:8, borderRadius:"50%", background:col }} />
+                              <span style={{ fontSize:11, color:C.gray, fontWeight:600 }}>{lbl}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ display:"flex", flexDirection:"column", gap:13 }}>
+                        {campaigns.filter(c=>c.leads>0).map((c,i) => (
+                          <div key={i} style={{ display:"grid", gridTemplateColumns:"28px 1fr 1fr", gap:12, alignItems:"center" }}>
+                            <div style={{ width:24, height:24, borderRadius:6, background:c.cpl>avgCPL*2?C.pink:c.cpl<avgCPL*0.7?C.blue:C.lightGray, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700, color:c.cpl>avgCPL*2||c.cpl<avgCPL*0.7?C.white:C.gray }}>{i+1}</div>
+                            <div>
+                              <div style={{ fontSize:13, fontWeight:600, color:C.black }}>{c.nombre}</div>
+                              <div style={{ fontSize:11, color:C.gray, marginTop:1 }}>{c.leads} leads · frec. {c.frecuencia.toFixed(1)}×</div>
+                            </div>
+                            <CPLBar cpl={c.cpl} max={campaigns[0]?.cpl||1} avg={avgCPL} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {bestCPL.cpl > 0 && (
+                      <div style={{ background:C.blue+"10", border:`1.5px solid ${C.blue}25`, borderLeft:`4px solid ${C.blue}`, borderRadius:12, padding:"18px 22px" }}>
+                        <div style={{ fontSize:11, color:C.blue, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:8 }}>💡 Insight clave</div>
+                        <p style={{ margin:0, fontSize:14, color:C.darkGray, lineHeight:1.7 }}>
+                          <strong>{bestCPL.nombre}</strong> tiene el CPL más eficiente con <strong style={{ color:C.blue }}>${bestCPL.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}/lead</strong>
+                          {worstCPL.cpl > 0 && <> — <strong style={{ color:C.pink }}>{Math.round(worstCPL.cpl/bestCPL.cpl)}× más eficiente</strong> que {worstCPL.nombre}</>}.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ── CREATIVOS ── */}
+            {activeTab==="anuncios" && (
+              <div>
+                {ads.length === 0 ? (
+                  <EmptyState onUpload={()=>setActiveTab("upload")} msg="Carga el reporte de Anuncios para ver el análisis de creativos." />
+                ) : (
+                  <>
+                    <div style={{ background:C.black, borderRadius:14, padding:"22px 26px", marginBottom:24, color:C.white }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                        <div style={{ display:"flex", gap:4 }}>{[C.pink,C.blue,C.orange].map((c,i)=><div key={i} style={{ width:9, height:9, borderRadius:"50%", background:c }} />)}</div>
+                        <div style={{ fontSize:11, color:"#555", fontWeight:700, letterSpacing:"0.15em", textTransform:"uppercase" }}>Análisis de creativos</div>
+                      </div>
+                      <p style={{ margin:"0 0 6px", fontSize:16, fontWeight:700 }}>Creativos estrella vs. creativos que necesitan cambio</p>
+                      <p style={{ margin:0, fontSize:13, color:"#aaa", lineHeight:1.7 }}>{ads.filter(a=>a.leads>0).length} anuncios con resultados · {ads.length} total</p>
+                    </div>
+
+                    <div style={{ marginBottom:24 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:C.blue, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:14 }}>🏆 Top creativos — mejor CPL</div>
+                      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                        {topAds.map((ad,i) => (
+                          <div key={i} style={{ background:C.white, borderRadius:12, padding:"14px 20px", boxShadow:"0 1px 4px rgba(0,0,0,0.05)", borderLeft:`4px solid ${i<2?C.blue:C.lightGray}`, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
+                            <div style={{ flex:1, minWidth:200 }}>
+                              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5, flexWrap:"wrap" }}>
+                                <span style={{ fontSize:13, fontWeight:700, color:C.black }}>{ad.nombre.length>45?ad.nombre.slice(0,45)+"…":ad.nombre}</span>
+                                {i<2 && <Pill color={C.pink}>★ Estrella</Pill>}
+                              </div>
+                              <div style={{ fontSize:11, color:C.gray }}>{ad.conjunto.length>50?ad.conjunto.slice(0,50)+"…":ad.conjunto}</div>
+                            </div>
+                            <div style={{ textAlign:"right" }}>
+                              <div style={{ fontSize:11, color:C.gray, fontWeight:700, textTransform:"uppercase" }}>{ad.leads} leads</div>
+                              <div style={{ fontSize:20, fontWeight:700, color:C.blue }}>${ad.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize:12, fontWeight:700, color:C.pink, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:14 }}>⚠ Creativos problemáticos — peor CPL</div>
+                      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                        {worstAds.map((ad,i) => {
+                          const hasScores = ad.calidad!=="-" || ad.conversion!=="-";
+                          const isFunnel = ad.calidad.toLowerCase().includes("encima") && ad.conversion.toLowerCase().includes("abajo");
+                          return (
+                            <div key={i} style={{ background:C.white, borderRadius:12, padding:"14px 20px", boxShadow:"0 1px 4px rgba(0,0,0,0.05)", borderLeft:`4px solid ${C.pink}` }}>
+                              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:12 }}>
+                                <div style={{ flex:1, minWidth:200 }}>
+                                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6, flexWrap:"wrap" }}>
+                                    <span style={{ fontSize:13, fontWeight:700 }}>{ad.nombre.length>45?ad.nombre.slice(0,45)+"…":ad.nombre}</span>
+                                    {isFunnel && <Pill color={C.orange}>Problema post-clic</Pill>}
+                                  </div>
+                                  {hasScores && (
+                                    <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+                                      <div style={{ display:"flex", alignItems:"center", gap:5 }}><span style={{ fontSize:10, color:C.gray, fontWeight:600 }}>Calidad:</span><ScoreBadge val={ad.calidad} /></div>
+                                      <div style={{ display:"flex", alignItems:"center", gap:5 }}><span style={{ fontSize:10, color:C.gray, fontWeight:600 }}>Conversión:</span><ScoreBadge val={ad.conversion} /></div>
+                                    </div>
+                                  )}
+                                  <div style={{ fontSize:11, color:C.gray, marginTop:5 }}>{ad.conjunto.length>50?ad.conjunto.slice(0,50)+"…":ad.conjunto}</div>
+                                </div>
+                                <div style={{ textAlign:"right" }}>
+                                  <div style={{ fontSize:11, color:C.gray, fontWeight:700, textTransform:"uppercase" }}>{ad.leads} leads</div>
+                                  <div style={{ fontSize:20, fontWeight:700, color:C.pink }}>${ad.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}</div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ── CAMPAÑAS CRÍTICAS ── */}
+            {activeTab==="worst" && (
+              <div>
+                {campaigns.length === 0 ? (
+                  <EmptyState onUpload={()=>setActiveTab("upload")} />
+                ) : criticalCamps.length === 0 ? (
+                  <div style={{ background:C.white, borderRadius:14, padding:"48px 32px", textAlign:"center", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+                    <div style={{ fontSize:32, marginBottom:12 }}>🎉</div>
+                    <div style={{ fontSize:16, fontWeight:700, marginBottom:8 }}>No hay campañas críticas</div>
+                    <div style={{ fontSize:14, color:C.gray }}>Ninguna campaña supera 2× el CPL promedio. Buen trabajo.</div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ background:C.white, borderRadius:12, padding:"16px 22px", marginBottom:22, display:"flex", gap:24, flexWrap:"wrap", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", borderLeft:`4px solid ${C.pink}` }}>
+                      <div><div style={{ fontSize:10, color:C.gray, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}>CPL promedio</div><div style={{ fontSize:20, fontWeight:700, color:C.black, marginTop:4 }}>${avgCPL.toLocaleString("es-CL")}</div></div>
+                      <div><div style={{ fontSize:10, color:C.gray, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}>Campañas críticas</div><div style={{ fontSize:20, fontWeight:700, color:C.pink, marginTop:4 }}>{criticalCamps.length}</div></div>
+                      <div><div style={{ fontSize:10, color:C.gray, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}>Gasto en críticas</div><div style={{ fontSize:20, fontWeight:700, color:C.pink, marginTop:4 }}>CLP {criticalCamps.reduce((a,c)=>a+c.gasto,0).toLocaleString("es-CL")}</div></div>
+                    </div>
+
+                    {criticalCamps.map((camp,idx) => (
+                      <div key={idx} style={{ background:C.white, borderRadius:14, marginBottom:12, overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", borderTop:`4px solid ${camp.cpl>avgCPL*4?C.pink:C.orange}` }}>
+                        <div onClick={()=>setExpandedCard(expandedCard===idx?null:idx)} style={{ padding:"18px 24px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                            <div style={{ background:camp.cpl>avgCPL*4?C.pink:C.orange, borderRadius:8, padding:"6px 12px" }}>
+                              <span style={{ fontSize:12, fontWeight:700, color:C.white, fontFamily:"monospace" }}>${camp.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}</span>
+                            </div>
+                            <div>
+                              <div style={{ fontSize:14, fontWeight:700 }}>{camp.nombre}</div>
+                              <div style={{ fontSize:11, color:C.gray, marginTop:2 }}>{camp.leads} leads · frec. {camp.frecuencia.toFixed(1)}× · CPL {(camp.cpl/avgCPL).toFixed(1)}× el promedio</div>
+                            </div>
+                          </div>
+                          <div style={{ fontSize:14, color:C.gray }}>{expandedCard===idx?"▲":"▼"}</div>
+                        </div>
+                        {expandedCard===idx && (
+                          <div style={{ padding:"0 24px 22px", borderTop:`1px solid ${C.lightGray}` }}>
+                            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))", gap:10, marginTop:18, marginBottom:18 }}>
+                              {[
+                                { label:"Leads", value:camp.leads },
+                                { label:"Gasto", value:`$${camp.gasto.toLocaleString("es-CL")}` },
+                                { label:"Frecuencia", value:`${camp.frecuencia.toFixed(1)}×`, alert:camp.frecuencia>3 },
+                                { label:"CPL vs avg", value:`${(camp.cpl/avgCPL).toFixed(1)}×`, alert:true },
+                                { label:"Alcance", value:camp.alcance.toLocaleString("es-CL"), alert:camp.alcance<15000 },
+                              ].map((m,i) => (
+                                <div key={i} style={{ background:m.alert?C.pink+"08":C.cream, border:`1px solid ${m.alert?C.pink+"25":C.lightGray}`, borderRadius:10, padding:"12px" }}>
+                                  <div style={{ fontSize:10, color:C.gray, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:5 }}>{m.label}</div>
+                                  <div style={{ fontSize:18, fontWeight:700, color:m.alert?C.pink:C.black }}>{m.value}</div>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{ background:C.cream, borderRadius:10, padding:"14px 18px" }}>
+                              <div style={{ fontSize:11, fontWeight:700, color:C.black, marginBottom:10, letterSpacing:"0.08em", textTransform:"uppercase" }}>Acciones recomendadas</div>
+                              {[
+                                camp.frecuencia > 4 && "⛔ Frecuencia crítica — renovar creativos o ampliar audiencia urgente",
+                                camp.alcance < 10000 && "🗺️ Alcance muy pequeño — ampliar targeting geográfico o etario",
+                                camp.cpl > avgCPL*4 && "💰 Considerar pausar y reasignar presupuesto a campañas con CPL < promedio",
+                                "🎯 Verificar que los intereses en Adv+ están como sugerencias, no restricciones",
+                                "📝 Revisar formulario — reducir a máximo 3 campos si tiene conversión baja",
+                              ].filter(Boolean).map((a,i) => (
+                                <div key={i} style={{ fontSize:13, color:C.darkGray, lineHeight:1.6, marginBottom:7, display:"flex", gap:8 }}>
+                                  <span>{a.slice(0,2)}</span><span>{a.slice(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ── ADV+ ── */}
+            {activeTab==="advplus" && (
+              <div>
+                <div style={{ background:C.black, borderRadius:14, padding:"24px 28px", marginBottom:24, color:C.white }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+                    <div style={{ display:"flex", gap:4 }}>{[C.pink,C.blue,C.orange].map((c,i)=><div key={i} style={{ width:9, height:9, borderRadius:"50%", background:c }} />)}</div>
+                    <div style={{ fontSize:11, color:"#555", fontWeight:700, letterSpacing:"0.15em", textTransform:"uppercase" }}>Adv+ vs. Intereses</div>
+                  </div>
+                  <p style={{ margin:"0 0 8px", fontSize:17, fontWeight:700 }}>El problema no es la herramienta — es el tamaño de la audiencia.</p>
+                  <p style={{ margin:0, fontSize:13, color:"#aaa", lineHeight:1.8 }}>Audiencias &gt;30k tienen CPL promedio <strong style={{ color:C.blue }}>óptimo</strong>. Audiencias &lt;15k tienen CPL <strong style={{ color:C.pink }}>crítico</strong>. No agregar restricciones de intereses — empeoraría el problema.</p>
+                </div>
+
+                {adSetsWithLeads.length > 0 && (
+                  <div style={{ background:C.white, borderRadius:14, padding:"24px 28px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", marginBottom:22 }}>
+                    <div style={{ fontSize:15, fontWeight:700, marginBottom:4 }}>Alcance vs CPL por conjunto</div>
+                    <div style={{ fontSize:12, color:C.gray, marginBottom:22 }}>Barra = tamaño de audiencia · Color = nivel de CPL vs promedio</div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                      {adSetsWithLeads.map((a,i) => {
+                        const maxAlc = adSetsWithLeads[0]?.alcance||1;
+                        const pct = Math.min((a.alcance/maxAlc)*100,100);
+                        const col = a.cpl > avgCPL*3 ? C.pink : a.cpl > avgCPL*1.5 ? C.orange : C.blue;
+                        return (
+                          <div key={i} style={{ display:"grid", gridTemplateColumns:"150px 1fr 90px", gap:14, alignItems:"center" }}>
+                            <div style={{ fontSize:12, color:a.cpl<avgCPL?C.black:C.gray, fontWeight:a.cpl<avgCPL?600:400, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={a.nombre}>{a.nombre}</div>
+                            <div>
+                              <div style={{ height:6, background:C.cream, borderRadius:3 }}><div style={{ width:`${pct}%`, height:"100%", background:col, borderRadius:3 }} /></div>
+                              <div style={{ fontSize:10, color:C.gray, marginTop:2 }}>{a.alcance.toLocaleString("es-CL")} personas</div>
+                            </div>
+                            <div style={{ fontSize:13, fontWeight:700, color:col, textAlign:"right", fontFamily:"monospace" }}>${a.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap:14 }}>
+                  {[
+                    { titulo:"✅ Sigue usando Adv+", color:C.blue, puntos:["Adv+ funciona bien con audiencias grandes (+30k)","No cambies lo que ya genera buen CPL","Usa los datos de alcance arriba para identificar dónde hay problemas"] },
+                    { titulo:"⚙ Cómo usar intereses en Adv+", color:C.orange, puntos:["Agrégalos como SUGERENCIAS, no restricciones duras","Meta puede salir de esos intereses si encuentra mejores audiencias","Úsalos para orientar el algoritmo, no para limitarlo"] },
+                    { titulo:"🚫 Lo que NO hacer", color:C.pink, puntos:["No agregar restricciones a conjuntos con alcance < 15k","No segmentar por edad muy específica en nichos pequeños","No crear nuevos conjuntos sin revisar el tamaño estimado de audiencia primero"] },
+                  ].map((card,i) => (
+                    <div key={i} style={{ background:C.white, borderRadius:12, padding:"20px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", borderTop:`4px solid ${card.color}` }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:card.color, marginBottom:14 }}>{card.titulo}</div>
+                      {card.puntos.map((p,j) => (
+                        <div key={j} style={{ display:"flex", gap:10, alignItems:"flex-start", marginBottom:9 }}>
+                          <div style={{ width:5, height:5, borderRadius:"50%", background:card.color, marginTop:7, flexShrink:0 }} />
+                          <div style={{ fontSize:12, color:C.darkGray, lineHeight:1.6 }}>{p}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      );
+    }
+
+    const EmptyState = ({ onUpload, msg }) => (
+      <div style={{ background:C.white, borderRadius:14, padding:"56px 32px", textAlign:"center", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+        <div style={{ fontSize:36, marginBottom:14 }}>📂</div>
+        <div style={{ fontSize:16, fontWeight:700, marginBottom:8 }}>No hay datos cargados</div>
+        <div style={{ fontSize:14, color:C.gray, marginBottom:22 }}>{msg || "Importa tus reportes de Meta Ads para ver el análisis."}</div>
+        <button onClick={onUpload} style={{ background:C.black, color:C.white, border:"none", borderRadius:8, padding:"11px 24px", fontSize:13, fontWeight:700 }}>Ir a Importar datos →</button>
+      </div>
+    );
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
