@@ -317,19 +317,31 @@
             : "Eres un analista de Meta Ads experto. No hay datos cargados aún — indica al usuario que cargue sus CSVs primero. Responde en español.";
           const res = await fetch("https://api.anthropic.com/v1/messages", {
             method:"POST",
-            headers:{ "Content-Type":"application/json", "x-api-key": apiKey, "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+            headers:{
+              "Content-Type":"application/json",
+              "x-api-key": apiKey,
+              "anthropic-version":"2023-06-01",
+              "anthropic-dangerous-direct-browser-access": "true"
+            },
             body: JSON.stringify({
               model:"claude-sonnet-4-20250514",
-              max_tokens:1000,
+              max_tokens:1024,
               system: systemPrompt,
               messages:[...chatMessages, userMsg].map(m=>({ role:m.role, content:m.content })),
             }),
           });
+          if (!res.ok) {
+            const errData = await res.json().catch(()=>({}));
+            const errMsg = errData?.error?.message || `Error ${res.status}: ${res.statusText}`;
+            setChatMessages(prev => [...prev, { role:"assistant", content:`❌ Error de API: ${errMsg}` }]);
+            setChatLoading(false);
+            return;
+          }
           const data = await res.json();
           const reply = data.content?.[0]?.text || "No pude procesar la respuesta.";
           setChatMessages(prev => [...prev, { role:"assistant", content:reply }]);
         } catch(e) {
-          setChatMessages(prev => [...prev, { role:"assistant", content:"Error al conectar con la IA. Intenta de nuevo." }]);
+          setChatMessages(prev => [...prev, { role:"assistant", content:`❌ Error de conexión: ${e.message}. Verifica que la API key es correcta.` }]);
         }
         setChatLoading(false);
         setTimeout(()=>chatEndRef.current?.scrollIntoView({ behavior:"smooth" }), 100);
