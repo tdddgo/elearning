@@ -264,31 +264,153 @@
 
       const allLoaded = fileStatus.camps==="ok"||fileStatus.adsets==="ok"||fileStatus.ads==="ok";
 
-      // Build data context for Claude
+      // Build rich data context for Claude
       const buildContext = () => {
         const camps = rawData.campaigns;
         const sets = rawData.adSets;
         const adsList = rawData.ads;
         if (camps.length === 0 && sets.length === 0 && adsList.length === 0) return null;
-        let ctx = "Datos de campañas Meta Ads de MÁS Educación Continua UNIACC:\n\n";
+
+        const totalGastoCtx = camps.reduce((a,c)=>a+c.gasto,0);
+        const totalLeadsCtx = camps.reduce((a,c)=>a+c.leads,0);
+        const avgCPLCtx = totalLeadsCtx > 0 ? Math.round(totalGastoCtx/totalLeadsCtx) : 0;
+        const campsWithLeads = camps.filter(c=>c.leads>0).sort((a,b)=>a.cpl-b.cpl);
+        const bestCamp = campsWithLeads[0];
+        const worstCamp = campsWithLeads[campsWithLeads.length-1];
+        const criticals = campsWithLeads.filter(c=>c.cpl>avgCPLCtx*2);
+        const wastedBudget = criticals.reduce((a,c)=>a+c.gasto,0);
+
+        // Budget concentration
+        const sortedBySpend = [...camps].sort((a,b)=>b.gasto-a.gasto);
+        const top3Spend = sortedBySpend.slice(0,3).reduce((a,c)=>a+c.gasto,0);
+        const top3Pct = totalGastoCtx > 0 ? Math.round((top3Spend/totalGastoCtx)*100) : 0;
+
+        // Frequency analysis
+        const highFreq = camps.filter(c=>c.frecuencia>3.5);
+        const lowReach = camps.filter(c=>c.alcance>0&&c.alcance<15000);
+
+        // Objective breakdown
+        const byObj = {};
+        camps.forEach(c=>{
+          if(!byObj[c.objetivo]) byObj[c.objetivo]={camps:0,leads:0,gasto:0};
+          byObj[c.objetivo].camps++;
+          byObj[c.objetivo].leads+=c.leads;
+          byObj[c.objetivo].gasto+=c.gasto;
+        });
+
+        // Ad quality patterns
+        const adsWithScores = adsList.filter(a=>a.calidad&&a.calidad!=="-"&&a.leads>0);
+        const funnelProblems = adsWithScores.filter(a=>/encima|above/i.test(a.calidad)&&/abajo|below/i.test(a.conversion));
+
+        let ctx = `=== DATOS META ADS · MÁS EDUCACIÓN CONTINUA UNIACC ===
+
+`;
+        ctx += `RESUMEN EJECUTIVO:
+`;
+        ctx += `- Gasto total: CLP ${totalGastoCtx.toLocaleString("es-CL")}
+`;
+        ctx += `- Total leads/resultados: ${totalLeadsCtx}
+`;
+        ctx += `- CPL promedio general: $${avgCPLCtx.toLocaleString("es-CL")}
+`;
+        ctx += `- Mejor CPL: $${bestCamp?Math.round(bestCamp.cpl).toLocaleString("es-CL"):"N/A"} (${bestCamp?.nombre||""})
+`;
+        ctx += `- Peor CPL: $${worstCamp?Math.round(worstCamp.cpl).toLocaleString("es-CL"):"N/A"} (${worstCamp?.nombre||""})
+`;
+        ctx += `- Ratio mejor/peor CPL: ${bestCamp&&worstCamp?Math.round(worstCamp.cpl/bestCamp.cpl)+"x":"-"}
+`;
+        ctx += `- Campañas críticas (CPL > 2x promedio): ${criticals.length} campañas
+`;
+        ctx += `- Presupuesto en campañas críticas: CLP ${wastedBudget.toLocaleString("es-CL")} (${totalGastoCtx>0?Math.round((wastedBudget/totalGastoCtx)*100):0}% del total)
+`;
+        ctx += `- Concentración de gasto: top 3 campañas acaparan ${top3Pct}% del presupuesto
+`;
+        ctx += `- Campañas con frecuencia alta (>3.5x): ${highFreq.length}
+`;
+        ctx += `- Campañas con alcance pequeño (<15k personas): ${lowReach.length}
+`;
+
+        ctx += `
+DESGLOSE POR OBJETIVO:
+`;
+        Object.entries(byObj).forEach(([obj,data])=>{
+          const cpl = data.leads>0?Math.round(data.gasto/data.leads):0;
+          ctx += `- ${obj}: ${data.camps} campañas, ${data.leads} leads, CLP ${data.gasto.toLocaleString("es-CL")} gastados, CPL promedio $${cpl.toLocaleString("es-CL")}
+`;
+        });
+
         if (camps.length > 0) {
-          ctx += "CAMPAÑAS:\n";
-          camps.forEach(c => {
-            ctx += `- ${c.nombre}: ${c.leads} leads, CPL $${Math.round(c.cpl).toLocaleString("es-CL")}, gasto CLP ${c.gasto.toLocaleString("es-CL")}, alcance ${c.alcance.toLocaleString("es-CL")}, frecuencia ${c.frecuencia.toFixed(1)}x, objetivo: ${c.objetivo}\n`;
+          ctx += `
+CAMPAÑAS DETALLE (ordenadas de mejor a peor CPL):
+`;
+          campsWithLeads.forEach((c,i) => {
+            const vsAvg = avgCPLCtx>0?((c.cpl/avgCPLCtx-1)*100).toFixed(0):0;
+            const vsAvgTxt = vsAvg > 0 ? `+${vsAvg}% sobre promedio` : `${vsAvg}% bajo promedio`;
+            const pctGasto = totalGastoCtx>0?((c.gasto/totalGastoCtx)*100).toFixed(1):0;
+            const pctLeads = totalLeadsCtx>0?((c.leads/totalLeadsCtx)*100).toFixed(1):0;
+            ctx += `${i+1}. ${c.nombre}
+`;
+            ctx += `   CPL: $${Math.round(c.cpl).toLocaleString("es-CL")} (${vsAvgTxt})
+`;
+            ctx += `   Gasto: CLP ${c.gasto.toLocaleString("es-CL")} (${pctGasto}% del presupuesto total)
+`;
+            ctx += `   Leads: ${c.leads} (${pctLeads}% del total)
+`;
+            ctx += `   Alcance: ${c.alcance.toLocaleString("es-CL")} personas · Frecuencia: ${c.frecuencia.toFixed(1)}x · Objetivo: ${c.objetivo}
+`;
+            ctx += `   Eficiencia: ${(c.leads/Math.max(c.gasto/1000,1)).toFixed(2)} leads por mil CLP gastados
+`;
           });
+          // Campaigns with spend but no leads
+          const noLeads = camps.filter(c=>c.gasto>0&&c.leads===0);
+          if(noLeads.length>0){
+            ctx += `
+CAMPAÑAS SIN RESULTADOS (gasto sin leads):
+`;
+            noLeads.forEach(c=>{
+              ctx += `- ${c.nombre}: CLP ${c.gasto.toLocaleString("es-CL")} gastados, 0 leads
+`;
+            });
+          }
         }
+
         if (sets.length > 0) {
-          ctx += "\nCONJUNTOS DE ANUNCIOS:\n";
-          sets.slice(0,30).forEach(s => {
-            ctx += `- ${s.nombre}: ${s.leads} resultados, CPL $${Math.round(s.cpl).toLocaleString("es-CL")}, gasto CLP ${s.gasto.toLocaleString("es-CL")}, alcance ${s.alcance.toLocaleString("es-CL")}\n`;
+          ctx += `
+CONJUNTOS DE ANUNCIOS (top 20 por gasto):
+`;
+          [...sets].sort((a,b)=>b.gasto-a.gasto).slice(0,20).forEach(s => {
+            const eff = s.gasto>0&&s.leads>0?(s.leads/(s.gasto/1000)).toFixed(2):"0";
+            ctx += `- ${s.nombre}: ${s.leads} leads, CPL $${Math.round(s.cpl).toLocaleString("es-CL")}, gasto CLP ${s.gasto.toLocaleString("es-CL")}, alcance ${s.alcance.toLocaleString("es-CL")}, frec. ${s.frecuencia.toFixed(1)}x, ${eff} leads/1000 CLP
+`;
           });
         }
+
         if (adsList.length > 0) {
-          ctx += "\nANUNCIOS (top 30 por gasto):\n";
-          [...adsList].sort((a,b)=>b.gasto-a.gasto).slice(0,30).forEach(a => {
-            ctx += `- ${a.nombre}: ${a.leads} leads, CPL $${Math.round(a.cpl).toLocaleString("es-CL")}, gasto CLP ${a.gasto.toLocaleString("es-CL")}, calidad: ${a.calidad}, conversión: ${a.conversion}\n`;
+          ctx += `
+ANUNCIOS ESTRELLA (top 8 por CPL, mínimo 3 leads):
+`;
+          [...adsList].filter(a=>a.leads>=3).sort((a,b)=>a.cpl-b.cpl).slice(0,8).forEach(a => {
+            ctx += `- "${a.nombre}" en [${a.conjunto}]: ${a.leads} leads, CPL $${Math.round(a.cpl).toLocaleString("es-CL")}, gasto CLP ${a.gasto.toLocaleString("es-CL")}
+`;
           });
+          ctx += `
+ANUNCIOS PROBLEMÁTICOS (top 6 por CPL más alto):
+`;
+          [...adsList].filter(a=>a.leads>0).sort((a,b)=>b.cpl-a.cpl).slice(0,6).forEach(a => {
+            ctx += `- "${a.nombre}": ${a.leads} leads, CPL $${Math.round(a.cpl).toLocaleString("es-CL")}, gasto CLP ${a.gasto.toLocaleString("es-CL")}, calidad: ${a.calidad}, conversión: ${a.conversion}
+`;
+          });
+          if(funnelProblems.length>0){
+            ctx += `
+PROBLEMA POST-CLIC DETECTADO (calidad alta pero conversión baja):
+`;
+            funnelProblems.forEach(a=>{
+              ctx += `- "${a.nombre}": calidad ${a.calidad}, conversión ${a.conversion} → el formulario no convierte
+`;
+            });
+          }
         }
+
         return ctx;
       };
 
@@ -313,8 +435,32 @@
         setChatLoading(true);
         try {
           const systemPrompt = ctx
-            ? `Eres un analista de marketing digital especializado en Meta Ads. Analiza los datos proporcionados y responde preguntas de forma clara, concisa y accionable. Usa pesos chilenos (CLP) y el contexto de MÁS Educación Continua UNIACC. Responde siempre en español. Cuando identifiques problemas, sugiere acciones concretas.\n\n${ctx}`
-            : "Eres un analista de Meta Ads experto. No hay datos cargados aún — indica al usuario que cargue sus CSVs primero. Responde en español.";
+            ? `Eres un analista senior de performance marketing especializado en Meta Ads para el sector educativo. Trabajas para MÁS Educación Continua UNIACC en Chile.
+
+TU ESTILO DE ANÁLISIS:
+- Vas directo al punto: primero el dato, luego el diagnóstico, luego la acción concreta
+- Usas comparativas siempre: "campaña X gasta 3x más que Y pero genera 2x menos leads"
+- Identificas patrones no obvios: concentración de presupuesto, eficiencia por peso gastado, relación alcance/CPL
+- Calculas oportunidades en CLP: "pausar X liberaría CLP Y que redirigido a Z generaría ~N leads adicionales"
+- Priorizas por impacto: qué cambio pequeño tiene el mayor retorno
+- Detectas anomalías: campañas con gasto alto y cero leads, frecuencias críticas, audiencias microscópicas
+- Usas la métrica "leads por cada 1.000 CLP gastados" para comparar eficiencia real entre campañas
+
+FORMATO DE RESPUESTA:
+- Para análisis complejos: usa secciones con emojis (📊 Situación actual, 🔍 Diagnóstico, ⚡ Acciones prioritarias, 💰 Oportunidad estimada)
+- Para preguntas simples: respuesta directa en 2-3 líneas
+- Siempre termina con UNA acción concreta que el usuario puede hacer hoy
+- Números siempre en formato chileno con puntos de miles
+
+CONTEXTO DEL NEGOCIO:
+- MÁS es el área de Educación Continua de UNIACC (diplomados, cursos, talleres)
+- Campañas objetivo leads: el éxito es CPL bajo con volumen alto
+- Campañas objetivo visitas: el éxito es CPV bajo y alcance amplio
+- NO mezclar métricas entre objetivos distintos
+- Temporada: período de matrículas activo — el timing de las decisiones importa
+
+${ctx}`
+            : "Eres un analista de Meta Ads experto para MÁS UNIACC. No hay datos cargados aún — pide al usuario que cargue sus CSVs primero en la pestaña Importar. Responde en español.";
           const res = await fetch("https://api.anthropic.com/v1/messages", {
             method:"POST",
             headers:{
@@ -813,21 +959,70 @@
                 {/* Suggested questions */}
                 {chatMessages.length === 0 && apiKeySaved && (
                   <div style={{ marginBottom:20 }}>
-                    <div style={{ fontSize:11, color:C.gray, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:12 }}>Preguntas sugeridas</div>
-                    <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+
+                    {/* Auto analysis button */}
+                    {rawData.campaigns.length > 0 && (
+                      <div style={{ marginBottom:20 }}>
+                        <button
+                          onClick={async ()=>{
+                            const autoQ = "Hazme un análisis completo y profundo de todas las campañas: identifica las 3 principales oportunidades de mejora con su impacto estimado en CLP, compara la eficiencia entre campañas (leads por cada 1.000 CLP), detecta dónde se está perdiendo presupuesto, y dame un plan de acción priorizado por impacto para esta semana.";
+                            const ctx2 = buildContext();
+                            const uMsg = { role:"user", content:autoQ };
+                            setChatMessages([uMsg]);
+                            setChatLoading(true);
+                            try {
+                              const sysP = ctx2 ? `Eres un analista senior de performance marketing especializado en Meta Ads para el sector educativo. Trabajas para MÁS Educación Continua UNIACC en Chile.
+
+TU ESTILO DE ANÁLISIS:
+- Vas directo al punto: primero el dato, luego el diagnóstico, luego la acción concreta
+- Usas comparativas siempre: "campaña X gasta 3x más que Y pero genera 2x menos leads"
+- Identificas patrones no obvios: concentración de presupuesto, eficiencia por peso gastado, relación alcance/CPL
+- Calculas oportunidades en CLP: "pausar X liberaría CLP Y que redirigido a Z generaría ~N leads adicionales"
+- Priorizas por impacto: qué cambio pequeño tiene el mayor retorno
+- Detectas anomalías: campañas con gasto alto y cero leads, frecuencias críticas, audiencias microscópicas
+- Usas la métrica leads por cada 1.000 CLP gastados para comparar eficiencia real entre campañas
+
+FORMATO DE RESPUESTA:
+- Para análisis complejos: usa secciones con emojis (📊 Situación actual, 🔍 Diagnóstico, ⚡ Acciones prioritarias, 💰 Oportunidad estimada)
+- Para preguntas simples: respuesta directa en 2-3 líneas
+- Siempre termina con UNA acción concreta que el usuario puede hacer hoy
+- Números siempre en formato chileno con puntos de miles
+
+${ctx2}` : "No hay datos.";
+                              const r = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2000,system:sysP,messages:[{role:"user",content:autoQ}]})});
+                              if(!r.ok){const e=await r.json().catch(()=>({}));setChatMessages(prev=>[...prev,{role:"assistant",content:`❌ Error: ${e?.error?.message||r.status}`}]);}
+                              else{const d=await r.json();setChatMessages(prev=>[...prev,{role:"assistant",content:d.content?.[0]?.text||"Sin respuesta"}]);}
+                            } catch(e){setChatMessages(prev=>[...prev,{role:"assistant",content:`❌ Error: ${e.message}`}]);}
+                            setChatLoading(false);
+                            setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
+                          }}
+                          style={{ width:"100%", background:`linear-gradient(135deg, ${C.black} 0%, #1a1a2e 100%)`, color:C.white, border:`2px solid ${C.pink}40`, borderRadius:12, padding:"16px 24px", fontSize:14, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
+                          <span style={{ fontSize:20 }}>✨</span>
+                          <span>Análisis completo automático — oportunidades + plan de acción</span>
+                          <span style={{ fontSize:18 }}>→</span>
+                        </button>
+                        <div style={{ fontSize:11, color:C.gray, textAlign:"center", marginTop:6 }}>Analiza todas tus campañas y genera recomendaciones priorizadas por impacto</div>
+                      </div>
+                    )}
+
+                    <div style={{ fontSize:11, color:C.gray, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:12 }}>O pregunta algo específico</div>
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:8 }}>
                       {[
-                        "¿Cuál es la campaña que más ha gastado?",
-                        "¿Cuál campaña tiene mejor CPL?",
-                        "¿Qué campañas debería pausar?",
-                        "¿Dónde reasignar el presupuesto?",
-                        "¿Qué anuncio tiene mejor rendimiento?",
-                        "¿Qué campaña tiene la frecuencia más alta?",
-                        "Dame un resumen ejecutivo",
-                        "¿Qué conjuntos tienen audiencia pequeña?",
-                      ].map((q,i) => (
-                        <button key={i} onClick={()=>setChatInput(q)}
-                          style={{ background:C.white, border:`1.5px solid ${C.lightGray}`, borderRadius:100, padding:"8px 16px", fontSize:12, color:C.darkGray, fontWeight:500, cursor:"pointer" }}>
-                          {q}
+                        { q:"¿Dónde se está perdiendo más presupuesto?", icon:"💸" },
+                        { q:"Compara la eficiencia de todas las campañas en leads por cada 1.000 CLP", icon:"⚖️" },
+                        { q:"¿Qué campañas debería pausar hoy y cuánto liberaría?", icon:"⛔" },
+                        { q:"¿Dónde reasigno el presupuesto para maximizar leads?", icon:"🎯" },
+                        { q:"¿Qué anuncios tienen problema post-clic?", icon:"🔍" },
+                        { q:"¿Cuál es la campaña más eficiente y por qué?", icon:"🏆" },
+                        { q:"¿Qué campañas tienen frecuencia de saturación?", icon:"🔁" },
+                        { q:"Dame un diagnóstico de las audiencias pequeñas", icon:"👥" },
+                        { q:"¿Cuánto estoy pagando de más vs mi mejor campaña?", icon:"📊" },
+                        { q:"¿Qué patrón tienen mis mejores creativos?", icon:"🎨" },
+                      ].map((item,i) => (
+                        <button key={i} onClick={()=>setChatInput(item.q)}
+                          style={{ background:C.white, border:`1.5px solid ${C.lightGray}`, borderRadius:10, padding:"10px 14px", fontSize:12, color:C.darkGray, fontWeight:500, cursor:"pointer", textAlign:"left", display:"flex", gap:8, alignItems:"flex-start", lineHeight:1.4 }}>
+                          <span style={{ fontSize:14, flexShrink:0 }}>{item.icon}</span>
+                          <span>{item.q}</span>
                         </button>
                       ))}
                     </div>
