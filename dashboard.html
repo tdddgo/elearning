@@ -13,26 +13,47 @@
     * { margin:0; padding:0; box-sizing:border-box; }
     body { background:#f7f5f0; font-family:'Montserrat',sans-serif; }
     button { font-family:inherit; cursor:pointer; }
-    .drop-zone { border:2px dashed #e8e8e8; border-radius:14px; padding:32px 24px; text-align:center; transition:all 0.2s; background:#fff; }
-    .drop-zone.active { border-color:#29ABE2; background:#29ABE215; }
+    .drop-zone { border:2px dashed #e8e8e8; border-radius:14px; padding:32px 20px; text-align:center; transition:all 0.2s; background:#fff; cursor:pointer; }
+    .drop-zone.drag { border-color:#29ABE2; background:#29ABE215; }
     .drop-zone.done { border-color:#29ABE2; border-style:solid; background:#29ABE208; }
     .drop-zone.error { border-color:#E91E8C; background:#E91E8C08; }
     input[type=file] { display:none; }
+    ::-webkit-scrollbar { width:4px; height:4px; }
+    ::-webkit-scrollbar-track { background:#f0f0f0; }
+    ::-webkit-scrollbar-thumb { background:#ccc; border-radius:2px; }
   </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useCallback, useRef } = React;
+    const { useState, useRef, useMemo } = React;
     const LOGO_SRC = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAQHB9ADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAj/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AIyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//Z";
-    const C = { black:"#0a0a0a", white:"#ffffff", cream:"#f7f5f0", pink:"#E91E8C", blue:"#29ABE2", orange:"#F7941D", gray:"#888", lightGray:"#e8e8e8", darkGray:"#333" };
+    const C = { black:"#0a0a0a", white:"#fff", cream:"#f7f5f0", pink:"#E91E8C", blue:"#29ABE2", orange:"#F7941D", gray:"#888", lightGray:"#e8e8e8", darkGray:"#333" };
 
-    // ── CSV PARSERS ──────────────────────────────────────────
+    // ── DETECT OBJECTIVE FROM ROW ─────────────────────────────
+    function detectObjective(row) {
+      const ind = (row["Indicador de resultado"] || "").toLowerCase();
+      const obj = (row["Objetivo de rendimiento"] || "").toLowerCase();
+      const name = (row["Nombre de la campaña"] || row["Nombre del conjunto de anuncios"] || row["Nombre del anuncio"] || "").toLowerCase();
+      if (ind.includes("leadgen") || ind.includes("lead") || obj.includes("lead") || obj.includes("clientes potenciales")) return "leads";
+      if (ind.includes("landing") || ind.includes("visit") || obj.includes("visit") || obj.includes("destino")) return "visitas";
+      if (ind.includes("click") || ind.includes("clic") || obj.includes("clic")) return "clics";
+      if (name.includes("conv")) return "leads";
+      return "otro";
+    }
+
+    const OBJ_LABELS = {
+      leads:   { label:"Formularios / Leads", icon:"📋", color:"#E91E8C" },
+      visitas: { label:"Visitas a página",    icon:"🌐", color:"#29ABE2" },
+      clics:   { label:"Clics en enlace",     icon:"🖱",  color:"#F7941D" },
+      otro:    { label:"Otro objetivo",       icon:"📌", color:"#888"    },
+    };
+
+    // ── PARSERS ───────────────────────────────────────────────
     function parseCampaigns(rows) {
-      return rows
-        .filter(r => r["Nombre de la campaña"] && r["Resultados"] && parseFloat(r["Resultados"]) > 0)
+      return rows.filter(r => r["Nombre de la campaña"])
         .map(r => ({
-          nombre: r["Nombre de la campaña"].replace(/^26\|/, "").replace(/\|/g," | "),
+          nombre: r["Nombre de la campaña"],
           leads: parseFloat(r["Resultados"]) || 0,
           cpl: parseFloat(r["Costo por resultados"]) || 0,
           gasto: parseFloat(r["Importe gastado (CLP)"]) || 0,
@@ -40,13 +61,15 @@
           alcance: parseFloat(r["Alcance"]) || 0,
           frecuencia: parseFloat(r["Frecuencia"]) || 0,
           estado: r["Entrega de la campaña"] || "",
+          objetivo: detectObjective(r),
+          indicador: r["Indicador de resultado"] || "",
         }))
+        .filter(r => r.gasto > 0)
         .sort((a,b) => b.cpl - a.cpl);
     }
 
     function parseAdSets(rows) {
-      return rows
-        .filter(r => r["Nombre del conjunto de anuncios"] && parseFloat(r["Importe gastado (CLP)"]) > 0)
+      return rows.filter(r => r["Nombre del conjunto de anuncios"])
         .map(r => ({
           nombre: r["Nombre del conjunto de anuncios"],
           leads: parseFloat(r["Resultados"]) || 0,
@@ -55,14 +78,14 @@
           alcance: parseFloat(r["Alcance"]) || 0,
           frecuencia: parseFloat(r["Frecuencia"]) || 0,
           estado: r["Entrega del conjunto de anuncios"] || "",
-          cpm: parseFloat(r["CPM (costo por mil impresiones) (CLP)"]) || 0,
+          objetivo: detectObjective(r),
+          indicador: r["Indicador de resultado"] || "",
         }))
         .filter(r => r.gasto > 0);
     }
 
     function parseAds(rows) {
-      return rows
-        .filter(r => r["Nombre del anuncio"] && parseFloat(r["Importe gastado (CLP)"]) > 0)
+      return rows.filter(r => r["Nombre del anuncio"])
         .map(r => ({
           nombre: r["Nombre del anuncio"],
           leads: parseFloat(r["Resultados"]) || 0,
@@ -75,38 +98,35 @@
           engagement: r["Clasificación del porcentaje de interacción"] || "-",
           conversion: r["Clasificación del porcentaje de conversiones"] || "-",
           estado: r["Entrega del anuncio"] || "",
+          objetivo: detectObjective(r),
+          indicador: r["Indicador de resultado"] || "",
         }))
         .filter(r => r.gasto > 0);
     }
 
-    // ── HELPERS ──────────────────────────────────────────────
-    const cplCol = (cpl, avg) => {
-      if (!avg) return C.blue;
-      return cpl > avg*3 ? C.pink : cpl > avg*1.5 ? C.orange : cpl > avg ? "#aaa" : C.blue;
-    };
-
+    // ── SMALL COMPONENTS ─────────────────────────────────────
     const CPLBar = ({ cpl, max, avg }) => {
-      const pct = Math.min((cpl/max)*100, 100);
-      const col = cplCol(cpl, avg);
+      const pct = Math.min((cpl / (max||1)) * 100, 100);
+      const col = !avg ? C.blue : cpl > avg*3 ? C.pink : cpl > avg*1.5 ? C.orange : cpl > avg ? "#aaa" : C.blue;
       return (
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <div style={{ flex:1, height:3, background:C.lightGray, borderRadius:2 }}>
             <div style={{ width:`${pct}%`, height:"100%", background:col, borderRadius:2 }} />
           </div>
-          <span style={{ fontSize:13, fontWeight:700, color:col, minWidth:85, textAlign:"right", fontFamily:"monospace" }}>
-            ${cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}
+          <span style={{ fontSize:13, fontWeight:700, color:col, minWidth:90, textAlign:"right", fontFamily:"monospace" }}>
+            ${Math.round(cpl).toLocaleString("es-CL")}
           </span>
         </div>
       );
     };
 
     const ScoreBadge = ({ val }) => {
-      if (!val || val === "-" || val.trim() === "") return <span style={{ color:"#ccc", fontSize:11 }}>—</span>;
-      const isUp = val.toLowerCase().includes("encima") || val.toLowerCase().includes("above");
-      const isDown = val.toLowerCase().includes("abajo") || val.toLowerCase().includes("below");
+      if (!val || val==="-" || val.trim()==="") return <span style={{ color:"#ccc", fontSize:11 }}>—</span>;
+      const isUp = /encima|above/i.test(val);
+      const isDown = /abajo|below/i.test(val);
       const col = isUp ? C.blue : isDown ? C.pink : C.orange;
       const icon = isUp ? "↑" : isDown ? "↓" : "→";
-      const label = isUp ? "Encima" : isDown ? (val.includes("35") ? "Abajo -35%" : "Abajo -20%") : "Promedio";
+      const label = isUp ? "Encima" : isDown ? (val.includes("35") ? "-35%" : "-20%") : "Promedio";
       return <span style={{ background:col+"18", color:col, fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:100, fontFamily:"monospace" }}>{icon} {label}</span>;
     };
 
@@ -114,34 +134,67 @@
       <span style={{ background:color+"18", color, fontSize:9, fontWeight:700, letterSpacing:"0.1em", padding:"3px 9px", borderRadius:100, textTransform:"uppercase" }}>{children}</span>
     );
 
-    // ── UPLOAD ZONE ──────────────────────────────────────────
+    const EmptyState = ({ onUpload, msg }) => (
+      <div style={{ background:C.white, borderRadius:14, padding:"56px 32px", textAlign:"center", boxShadow:"0 1px 4px rgba(0,0,0,.06)" }}>
+        <div style={{ fontSize:36, marginBottom:14 }}>📂</div>
+        <div style={{ fontSize:16, fontWeight:700, marginBottom:8 }}>No hay datos cargados</div>
+        <div style={{ fontSize:14, color:C.gray, marginBottom:22 }}>{msg||"Importa tus reportes de Meta Ads para ver el análisis."}</div>
+        <button onClick={onUpload} style={{ background:C.black, color:C.white, border:"none", borderRadius:8, padding:"11px 24px", fontSize:13, fontWeight:700 }}>Ir a Importar →</button>
+      </div>
+    );
+
+    // ── UPLOAD ZONE ───────────────────────────────────────────
     const UploadZone = ({ label, icon, description, status, onFile }) => {
       const [drag, setDrag] = useState(false);
       const ref = useRef();
-      const cls = status === "ok" ? "done" : status === "error" ? "error" : drag ? "active" : "";
-
-      const handle = (file) => {
-        if (!file || !file.name.endsWith(".csv")) { onFile(null, "error"); return; }
-        Papa.parse(file, {
-          header: true, skipEmptyLines: true,
-          complete: (res) => onFile(res.data, "ok"),
-          error: () => onFile(null, "error"),
+      const cls = status==="ok" ? "done" : status==="error" ? "error" : drag ? "drag" : "";
+      const handle = file => {
+        if (!file || !file.name.endsWith(".csv")) { onFile(null,"error"); return; }
+        Papa.parse(file, { header:true, skipEmptyLines:true,
+          complete: res => onFile(res.data,"ok"),
+          error: () => onFile(null,"error"),
         });
       };
-
       return (
-        <div
-          className={`drop-zone ${cls}`}
-          onDragOver={e => { e.preventDefault(); setDrag(true); }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={e => { e.preventDefault(); setDrag(false); handle(e.dataTransfer.files[0]); }}
-          onClick={() => ref.current.click()}
-          style={{ cursor:"pointer" }}
+        <div className={`drop-zone ${cls}`}
+          onDragOver={e=>{e.preventDefault();setDrag(true);}}
+          onDragLeave={()=>setDrag(false)}
+          onDrop={e=>{e.preventDefault();setDrag(false);handle(e.dataTransfer.files[0]);}}
+          onClick={()=>ref.current.click()}
         >
-          <input ref={ref} type="file" accept=".csv" onChange={e => handle(e.target.files[0])} />
-          <div style={{ fontSize:28, marginBottom:10 }}>{status==="ok" ? "✅" : status==="error" ? "❌" : icon}</div>
-          <div style={{ fontSize:14, fontWeight:700, color:status==="ok"?C.blue:C.black, marginBottom:6 }}>{label}</div>
-          <div style={{ fontSize:12, color:C.gray, lineHeight:1.5 }}>{status==="ok" ? "Archivo cargado correctamente · Haz clic para reemplazar" : description}</div>
+          <input ref={ref} type="file" accept=".csv" onChange={e=>handle(e.target.files[0])} />
+          <div style={{ fontSize:26, marginBottom:8 }}>{status==="ok"?"✅":status==="error"?"❌":icon}</div>
+          <div style={{ fontSize:14, fontWeight:700, color:status==="ok"?C.blue:C.black, marginBottom:5 }}>{label}</div>
+          <div style={{ fontSize:12, color:C.gray, lineHeight:1.5 }}>
+            {status==="ok" ? "Cargado · Clic para reemplazar" : description}
+          </div>
+        </div>
+      );
+    };
+
+    // ── OBJECTIVE FILTER BAR ──────────────────────────────────
+    const ObjectiveFilter = ({ objectives, active, onChange }) => {
+      if (objectives.length <= 1) return null;
+      return (
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:24 }}>
+          <button
+            onClick={()=>onChange("all")}
+            style={{ background:active==="all"?C.black:"transparent", color:active==="all"?C.white:C.gray, border:`1.5px solid ${active==="all"?C.black:C.lightGray}`, borderRadius:100, padding:"7px 16px", fontSize:12, fontWeight:600, transition:"all 0.15s" }}
+          >
+            Todos los objetivos
+          </button>
+          {objectives.map(obj => {
+            const meta = OBJ_LABELS[obj] || OBJ_LABELS.otro;
+            const isActive = active === obj;
+            return (
+              <button key={obj}
+                onClick={()=>onChange(obj)}
+                style={{ background:isActive?meta.color:"transparent", color:isActive?C.white:C.gray, border:`1.5px solid ${isActive?meta.color:C.lightGray}`, borderRadius:100, padding:"7px 16px", fontSize:12, fontWeight:600, transition:"all 0.15s", display:"flex", alignItems:"center", gap:6 }}
+              >
+                <span>{meta.icon}</span> {meta.label}
+              </button>
+            );
+          })}
         </div>
       );
     };
@@ -149,150 +202,174 @@
     // ── MAIN APP ─────────────────────────────────────────────
     function App() {
       const [activeTab, setActiveTab] = useState("upload");
-      const [expandedCard, setExpandedCard] = useState(null);
+      const [expanded, setExpanded] = useState(null);
       const [fileStatus, setFileStatus] = useState({ camps:"", adsets:"", ads:"" });
-      const [data, setData] = useState({ campaigns:[], adSets:[], ads:[] });
+      const [rawData, setRawData] = useState({ campaigns:[], adSets:[], ads:[] });
+
+      // Active objective filter per tab
+      const [objFilter, setObjFilter] = useState({ overview:"all", anuncios:"all", worst:"all", advplus:"all" });
 
       const handleFile = (key, parser) => (rows, status) => {
-        setFileStatus(s => ({ ...s, [key]: status }));
-        if (status === "ok") {
+        setFileStatus(s=>({...s,[key]:status}));
+        if (status==="ok") {
           const parsed = parser(rows);
-          setData(d => ({ ...d, [key==="camps"?"campaigns":key==="adsets"?"adSets":"ads"]: parsed }));
+          const dataKey = key==="camps"?"campaigns":key==="adsets"?"adSets":"ads";
+          setRawData(d=>({...d,[dataKey]:parsed}));
         }
       };
 
-      const allLoaded = fileStatus.camps==="ok" || fileStatus.adsets==="ok" || fileStatus.ads==="ok";
-      const { campaigns, adSets, ads } = data;
+      // Unique objectives present in each dataset
+      const campObjectives = useMemo(()=>[...new Set(rawData.campaigns.map(c=>c.objetivo))], [rawData.campaigns]);
+      const adsObjectives  = useMemo(()=>[...new Set(rawData.ads.map(a=>a.objetivo))],       [rawData.ads]);
+      const setsObjectives = useMemo(()=>[...new Set(rawData.adSets.map(a=>a.objetivo))],    [rawData.adSets]);
 
-      // Computed stats
-      const totalGasto = campaigns.reduce((a,c)=>a+c.gasto,0);
-      const totalLeads = campaigns.reduce((a,c)=>a+c.leads,0);
-      const avgCPL = totalLeads > 0 ? Math.round(totalGasto/totalLeads) : 0;
-      const bestCPL = campaigns.filter(c=>c.leads>0).reduce((best,c) => c.cpl < best.cpl ? c : best, campaigns.find(c=>c.leads>0)||{cpl:0});
-      const worstCPL = campaigns.reduce((worst,c) => c.cpl > worst.cpl ? c : worst, {cpl:0});
+      // Filtered data
+      const filteredCamps = useMemo(()=>
+        objFilter.overview==="all" ? rawData.campaigns : rawData.campaigns.filter(c=>c.objetivo===objFilter.overview),
+        [rawData.campaigns, objFilter.overview]);
 
-      // Worst campaigns = CPL > 2x average, active
-      const criticalCamps = campaigns.filter(c => c.leads > 0 && c.cpl > avgCPL * 2).slice(0,5);
+      const filteredAds = useMemo(()=>
+        objFilter.anuncios==="all" ? rawData.ads : rawData.ads.filter(a=>a.objetivo===objFilter.anuncios),
+        [rawData.ads, objFilter.anuncios]);
 
-      // Top/worst ads
-      const topAds = [...ads].filter(a=>a.leads>0).sort((a,b)=>a.cpl-b.cpl).slice(0,6);
-      const worstAds = [...ads].filter(a=>a.leads>0).sort((a,b)=>b.cpl-a.cpl).slice(0,5);
+      const filteredWorstCamps = useMemo(()=>
+        objFilter.worst==="all" ? rawData.campaigns : rawData.campaigns.filter(c=>c.objetivo===objFilter.worst),
+        [rawData.campaigns, objFilter.worst]);
 
-      // Audience correlation
-      const adSetsWithLeads = adSets.filter(a=>a.leads>0).sort((a,b)=>b.alcance-a.alcance);
+      const filteredSets = useMemo(()=>
+        objFilter.advplus==="all" ? rawData.adSets : rawData.adSets.filter(a=>a.objetivo===objFilter.advplus),
+        [rawData.adSets, objFilter.advplus]);
+
+      const setFilter = (tab, val) => setObjFilter(f=>({...f,[tab]:val}));
+
+      // Stats
+      const totalGasto = filteredCamps.reduce((a,c)=>a+c.gasto,0);
+      const totalLeads = filteredCamps.reduce((a,c)=>a+c.leads,0);
+      const avgCPL = totalLeads>0 ? Math.round(totalGasto/totalLeads) : 0;
+      const campsWithLeads = filteredCamps.filter(c=>c.leads>0);
+      const bestCPL = campsWithLeads.length ? [...campsWithLeads].sort((a,b)=>a.cpl-b.cpl)[0] : null;
+      const worstCPL = campsWithLeads.length ? [...campsWithLeads].sort((a,b)=>b.cpl-a.cpl)[0] : null;
+      const criticalCamps = campsWithLeads.filter(c=>c.cpl>avgCPL*2).slice(0,8);
+
+      const topAds   = [...filteredAds].filter(a=>a.leads>0).sort((a,b)=>a.cpl-b.cpl).slice(0,6);
+      const worstAds = [...filteredAds].filter(a=>a.leads>0).sort((a,b)=>b.cpl-a.cpl).slice(0,5);
+      const setsWithLeads = filteredSets.filter(a=>a.leads>0).sort((a,b)=>b.alcance-a.alcance);
+
+      const allLoaded = fileStatus.camps==="ok"||fileStatus.adsets==="ok"||fileStatus.ads==="ok";
 
       const tabs = [
-        { id:"upload", label:"📂 Importar datos" },
+        { id:"upload",   label:"📂 Importar" },
         { id:"overview", label:"Panorama" },
         { id:"anuncios", label:"Creativos" },
-        { id:"worst", label:"Campañas críticas" },
-        { id:"advplus", label:"Adv+ vs Intereses" },
+        { id:"worst",    label:"Campañas críticas" },
+        { id:"advplus",  label:"Adv+ vs Intereses" },
       ];
 
       return (
         <div style={{ minHeight:"100vh", background:C.cream, paddingBottom:80 }}>
 
           {/* HEADER */}
-          <div style={{ background:C.black, padding:"0 40px" }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:24, flexWrap:"wrap", gap:12 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:18 }}>
-                <img src={LOGO_SRC} alt="MÁS" style={{ height:32, filter:"invert(1)", objectFit:"contain" }} />
-                <div style={{ width:1, height:30, background:"#2a2a2a" }} />
+          <div style={{ background:C.black, padding:"0 40px", position:"sticky", top:0, zIndex:100 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:22, flexWrap:"wrap", gap:12 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+                <img src={LOGO_SRC} alt="MÁS" style={{ height:30, filter:"invert(1)", objectFit:"contain" }} />
+                <div style={{ width:1, height:28, background:"#2a2a2a" }} />
                 <div>
-                  <div style={{ fontSize:11, color:"#555", letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:700 }}>Meta Ads Dashboard</div>
-                  {allLoaded && <div style={{ fontSize:11, color:"#333", marginTop:1 }}>
-                    {campaigns.length > 0 && `${campaigns.length} campañas · ${totalLeads} leads · CLP ${(totalGasto/1000000).toFixed(2)}M`}
-                  </div>}
+                  <div style={{ fontSize:10, color:"#555", letterSpacing:"0.18em", textTransform:"uppercase", fontWeight:700 }}>Meta Ads Dashboard</div>
+                  {allLoaded && <div style={{ fontSize:10, color:"#444", marginTop:1 }}>{rawData.campaigns.length} campañas · {rawData.adSets.length} conjuntos · {rawData.ads.length} anuncios</div>}
                 </div>
               </div>
-              {allLoaded && (
-                <div style={{ display:"flex", gap:8 }}>
-                  {criticalCamps.length > 0 && (
-                    <div style={{ display:"flex", alignItems:"center", gap:8, background:C.pink+"20", border:`1px solid ${C.pink}40`, borderRadius:8, padding:"7px 14px" }}>
-                      <div style={{ width:7, height:7, borderRadius:"50%", background:C.pink }} />
-                      <span style={{ fontSize:11, color:C.pink, fontWeight:700, letterSpacing:"0.08em" }}>{criticalCamps.length} CAMPAÑAS CRÍTICAS</span>
-                    </div>
-                  )}
+              {/* Objective legend */}
+              {allLoaded && campObjectives.length > 1 && (
+                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                  {campObjectives.map(obj => {
+                    const meta = OBJ_LABELS[obj]||OBJ_LABELS.otro;
+                    const count = rawData.campaigns.filter(c=>c.objetivo===obj).length;
+                    return (
+                      <div key={obj} style={{ display:"flex", alignItems:"center", gap:6, background:meta.color+"20", borderRadius:100, padding:"4px 12px" }}>
+                        <div style={{ width:6, height:6, borderRadius:"50%", background:meta.color }} />
+                        <span style={{ fontSize:10, color:meta.color, fontWeight:700 }}>{meta.icon} {meta.label} ({count})</span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
-            <div style={{ display:"flex", height:3, marginTop:20 }}>
-              <div style={{ flex:1, background:C.pink }} /><div style={{ flex:1, background:C.blue }} /><div style={{ flex:1, background:C.orange }} />
+            <div style={{ display:"flex", height:3, marginTop:18 }}>
+              <div style={{ flex:1, background:C.pink }}/><div style={{ flex:1, background:C.blue }}/><div style={{ flex:1, background:C.orange }}/>
             </div>
             <div style={{ display:"flex", flexWrap:"wrap" }}>
               {tabs.map(tab => (
-                <button key={tab.id} onClick={()=>setActiveTab(tab.id)} style={{ background:"transparent", color:activeTab===tab.id?C.white:"#555", border:"none", borderBottom:`3px solid ${activeTab===tab.id?C.pink:"transparent"}`, padding:"13px 20px", fontSize:13, fontWeight:600, letterSpacing:"0.04em", transition:"all 0.2s" }}>{tab.label}</button>
+                <button key={tab.id} onClick={()=>setActiveTab(tab.id)} style={{ background:"transparent", color:activeTab===tab.id?C.white:"#555", border:"none", borderBottom:`3px solid ${activeTab===tab.id?C.pink:"transparent"}`, padding:"12px 18px", fontSize:12, fontWeight:600, letterSpacing:"0.04em", transition:"all 0.2s" }}>{tab.label}</button>
               ))}
             </div>
           </div>
 
-          <div style={{ padding:"36px 40px" }}>
+          <div style={{ padding:"32px 40px" }}>
 
-            {/* ── UPLOAD TAB ── */}
+            {/* ── UPLOAD ── */}
             {activeTab==="upload" && (
               <div style={{ maxWidth:820, margin:"0 auto" }}>
-                <div style={{ marginBottom:28 }}>
+                <div style={{ marginBottom:24 }}>
                   <h2 style={{ fontSize:22, fontWeight:700, marginBottom:8 }}>Importar reportes de Meta Ads</h2>
-                  <p style={{ fontSize:14, color:C.gray, lineHeight:1.7 }}>
-                    Exporta los 3 reportes desde <strong>Meta Ads Manager</strong> en formato CSV y cárgalos aquí. El dashboard se actualiza automáticamente con tus nuevos datos.
-                  </p>
+                  <p style={{ fontSize:14, color:C.gray, lineHeight:1.7 }}>Exporta los reportes desde Meta Ads Manager en CSV y cárgalos aquí. El dashboard detecta automáticamente el objetivo de cada campaña y te permite filtrar por tipo.</p>
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(215px,1fr))", gap:14, marginBottom:28 }}>
+                  <UploadZone label="Campañas" icon="📊" description="Vista Campañas · Exportar → CSV" status={fileStatus.camps} onFile={handleFile("camps",parseCampaigns)} />
+                  <UploadZone label="Conjuntos de anuncios" icon="🗂" description="Vista Conjuntos · Exportar → CSV" status={fileStatus.adsets} onFile={handleFile("adsets",parseAdSets)} />
+                  <UploadZone label="Anuncios" icon="🎨" description="Vista Anuncios · Exportar → CSV" status={fileStatus.ads} onFile={handleFile("ads",parseAds)} />
                 </div>
 
-                {/* Upload zones */}
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:16, marginBottom:32 }}>
-                  <UploadZone
-                    label="Campañas" icon="📊"
-                    description="Exportar desde nivel Campañas en Ads Manager · CSV"
-                    status={fileStatus.camps}
-                    onFile={handleFile("camps", parseCampaigns)}
-                  />
-                  <UploadZone
-                    label="Conjuntos de anuncios" icon="🗂"
-                    description="Exportar desde nivel Conjuntos de anuncios · CSV"
-                    status={fileStatus.adsets}
-                    onFile={handleFile("adsets", parseAdSets)}
-                  />
-                  <UploadZone
-                    label="Anuncios" icon="🎨"
-                    description="Exportar desde nivel Anuncios · CSV"
-                    status={fileStatus.ads}
-                    onFile={handleFile("ads", parseAds)}
-                  />
-                </div>
-
-                {/* How to export */}
-                <div style={{ background:C.white, borderRadius:14, padding:"24px 28px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", marginBottom:20 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:C.black, marginBottom:16 }}>¿Cómo exportar desde Meta Ads Manager?</div>
-                  <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                    {[
-                      { paso:"1", txt:"Abre Meta Ads Manager y selecciona el rango de fechas que quieres analizar" },
-                      { paso:"2", txt:"En la vista de Campañas, haz clic en el botón Exportar (↓) → Exportar datos de la tabla → CSV" },
-                      { paso:"3", txt:"Repite el proceso cambiando a la vista Conjuntos de anuncios y luego Anuncios" },
-                      { paso:"4", txt:"Arrastra o selecciona cada archivo en las zonas de arriba — el dashboard se actualiza al instante" },
-                    ].map((s,i) => (
-                      <div key={i} style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-                        <div style={{ width:26, height:26, borderRadius:"50%", background:C.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:C.white, flexShrink:0 }}>{s.paso}</div>
-                        <div style={{ fontSize:13, color:C.darkGray, lineHeight:1.6, paddingTop:3 }}>{s.txt}</div>
-                      </div>
-                    ))}
+                {/* Objective preview */}
+                {rawData.campaigns.length > 0 && (
+                  <div style={{ background:C.white, borderRadius:14, padding:"22px 26px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", marginBottom:18 }}>
+                    <div style={{ fontSize:13, fontWeight:700, marginBottom:16 }}>Objetivos detectados en tus campañas</div>
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:12 }}>
+                      {campObjectives.map(obj => {
+                        const meta = OBJ_LABELS[obj]||OBJ_LABELS.otro;
+                        const camps = rawData.campaigns.filter(c=>c.objetivo===obj);
+                        const gasto = camps.reduce((a,c)=>a+c.gasto,0);
+                        const leads = camps.reduce((a,c)=>a+c.leads,0);
+                        return (
+                          <div key={obj} style={{ background:C.cream, borderRadius:12, padding:"16px", borderLeft:`4px solid ${meta.color}` }}>
+                            <div style={{ fontSize:16, marginBottom:6 }}>{meta.icon}</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:meta.color, marginBottom:8 }}>{meta.label}</div>
+                            <div style={{ fontSize:12, color:C.gray }}>{camps.length} campañas</div>
+                            <div style={{ fontSize:12, color:C.gray }}>{leads} resultados</div>
+                            <div style={{ fontSize:12, color:C.gray }}>CLP {gasto.toLocaleString("es-CL")}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{ marginTop:16, background:C.blue+"10", border:`1px solid ${C.blue}20`, borderLeft:`4px solid ${C.blue}`, borderRadius:10, padding:"12px 16px" }}>
+                      <div style={{ fontSize:11, color:C.blue, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:5 }}>💡 Filtros por objetivo</div>
+                      <p style={{ margin:0, fontSize:13, color:C.darkGray, lineHeight:1.6 }}>En cada pestaña verás un filtro para ver solo Formularios, solo Visitas, o todos juntos. Así el CPL promedio y los rankings son comparables entre sí.</p>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Tip */}
-                <div style={{ background:C.blue+"10", border:`1.5px solid ${C.blue}25`, borderLeft:`4px solid ${C.blue}`, borderRadius:12, padding:"16px 20px" }}>
-                  <div style={{ fontSize:11, color:C.blue, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:6 }}>💡 Tip</div>
-                  <p style={{ margin:0, fontSize:13, color:C.darkGray, lineHeight:1.7 }}>
-                    No necesitas cargar los 3 archivos a la vez. Con solo el reporte de Campañas ya puedes ver el Panorama general y las Campañas críticas. Los Creativos requieren el reporte de Anuncios.
-                  </p>
+                <div style={{ background:C.white, borderRadius:14, padding:"22px 26px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", marginBottom:16 }}>
+                  <div style={{ fontSize:13, fontWeight:700, marginBottom:14 }}>¿Cómo exportar desde Meta Ads Manager?</div>
+                  {[
+                    "Abre Meta Ads Manager y selecciona el rango de fechas",
+                    "En la vista Campañas, haz clic en Exportar (↓) → Exportar datos de la tabla → CSV",
+                    "Repite en vista Conjuntos de anuncios y luego Anuncios",
+                    "Arrastra cada archivo en las zonas de arriba — el dashboard se actualiza al instante",
+                  ].map((s,i) => (
+                    <div key={i} style={{ display:"flex", gap:14, alignItems:"flex-start", marginBottom:10 }}>
+                      <div style={{ width:24, height:24, borderRadius:"50%", background:C.black, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:C.white, flexShrink:0 }}>{i+1}</div>
+                      <div style={{ fontSize:13, color:C.darkGray, lineHeight:1.6, paddingTop:3 }}>{s}</div>
+                    </div>
+                  ))}
                 </div>
 
                 {allLoaded && (
-                  <div style={{ marginTop:20, background:C.black, borderRadius:12, padding:"18px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
+                  <div style={{ background:C.black, borderRadius:12, padding:"16px 22px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
                     <div>
                       <div style={{ fontSize:13, fontWeight:700, color:C.white }}>¡Datos cargados! Tu dashboard está listo.</div>
-                      <div style={{ fontSize:12, color:"#555", marginTop:3 }}>{campaigns.length} campañas · {adSets.length} conjuntos · {ads.length} anuncios</div>
+                      <div style={{ fontSize:11, color:"#555", marginTop:2 }}>{rawData.campaigns.length} campañas · {rawData.adSets.length} conjuntos · {rawData.ads.length} anuncios</div>
                     </div>
-                    <button onClick={()=>setActiveTab("overview")} style={{ background:C.pink, color:C.white, border:"none", borderRadius:8, padding:"10px 22px", fontSize:13, fontWeight:700, letterSpacing:"0.04em" }}>Ver Panorama →</button>
+                    <button onClick={()=>setActiveTab("overview")} style={{ background:C.pink, color:C.white, border:"none", borderRadius:8, padding:"10px 22px", fontSize:13, fontWeight:700 }}>Ver Panorama →</button>
                   </div>
                 )}
               </div>
@@ -301,62 +378,75 @@
             {/* ── OVERVIEW ── */}
             {activeTab==="overview" && (
               <div>
-                {campaigns.length === 0 ? (
-                  <EmptyState onUpload={()=>setActiveTab("upload")} />
-                ) : (
+                {rawData.campaigns.length===0 ? <EmptyState onUpload={()=>setActiveTab("upload")} /> : (
                   <>
-                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:14, marginBottom:32 }}>
+                    <ObjectiveFilter objectives={campObjectives} active={objFilter.overview} onChange={v=>setFilter("overview",v)} />
+
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(148px,1fr))", gap:12, marginBottom:28 }}>
                       {[
-                        { label:"Gasto total", value:`CLP ${(totalGasto/1000000).toFixed(2)}M`, accent:C.black },
-                        { label:"Total leads", value:totalLeads, accent:C.blue },
-                        { label:"CPL promedio", value:`$${avgCPL.toLocaleString("es-CL")}`, accent:C.blue },
-                        { label:"Mejor CPL", value:bestCPL.cpl?`$${bestCPL.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}`:"—", sub:bestCPL.nombre, accent:C.blue },
-                        { label:"Peor CPL", value:worstCPL.cpl?`$${worstCPL.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}`:"—", sub:worstCPL.nombre, accent:C.pink },
-                        { label:"Campañas críticas", value:criticalCamps.length, sub:`CPL > 2× promedio`, accent:C.orange },
-                      ].map((k,i) => (
-                        <div key={i} style={{ background:C.white, borderRadius:12, padding:"18px 16px", borderTop:`4px solid ${k.accent}`, boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
-                          <div style={{ fontSize:10, color:C.gray, letterSpacing:"0.14em", textTransform:"uppercase", fontWeight:700, marginBottom:8 }}>{k.label}</div>
-                          <div style={{ fontSize:20, fontWeight:700, color:k.accent===C.black?C.black:k.accent }}>{k.value}</div>
-                          {k.sub && <div style={{ fontSize:10, color:C.gray, marginTop:4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{k.sub}</div>}
+                        { label:"Gasto total",       value:`CLP ${(totalGasto/1000000).toFixed(2)}M`, accent:C.black },
+                        { label:"Total resultados",  value:totalLeads,                                 accent:C.blue },
+                        { label:"CPR promedio",       value:avgCPL?`$${avgCPL.toLocaleString("es-CL")}`:"—", accent:C.blue },
+                        { label:"Mejor CPR",          value:bestCPL?`$${Math.round(bestCPL.cpl).toLocaleString("es-CL")}`:"—", sub:bestCPL?.nombre, accent:C.blue },
+                        { label:"Peor CPR",           value:worstCPL?`$${Math.round(worstCPL.cpl).toLocaleString("es-CL")}`:"—", sub:worstCPL?.nombre, accent:C.pink },
+                        { label:"Campañas críticas",  value:criticalCamps.length, sub:"CPR > 2× promedio", accent:criticalCamps.length>0?C.orange:C.blue },
+                      ].map((k,i)=>(
+                        <div key={i} style={{ background:C.white, borderRadius:12, padding:"16px 14px", borderTop:`4px solid ${k.accent}`, boxShadow:"0 1px 4px rgba(0,0,0,.06)" }}>
+                          <div style={{ fontSize:9, color:C.gray, letterSpacing:"0.14em", textTransform:"uppercase", fontWeight:700, marginBottom:7 }}>{k.label}</div>
+                          <div style={{ fontSize:19, fontWeight:700, color:k.accent===C.black?C.black:k.accent }}>{k.value}</div>
+                          {k.sub && <div style={{ fontSize:9, color:C.gray, marginTop:3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{k.sub}</div>}
                         </div>
                       ))}
                     </div>
 
-                    <div style={{ background:C.white, borderRadius:14, padding:"26px 28px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", marginBottom:20 }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:22, flexWrap:"wrap", gap:10 }}>
+                    {/* Active objective note */}
+                    {objFilter.overview!=="all" && (
+                      <div style={{ background:(OBJ_LABELS[objFilter.overview]||OBJ_LABELS.otro).color+"12", border:`1px solid ${(OBJ_LABELS[objFilter.overview]||OBJ_LABELS.otro).color}30`, borderRadius:10, padding:"10px 16px", marginBottom:20, display:"flex", alignItems:"center", gap:10 }}>
+                        <span style={{ fontSize:16 }}>{(OBJ_LABELS[objFilter.overview]||OBJ_LABELS.otro).icon}</span>
+                        <span style={{ fontSize:13, color:C.darkGray }}>Mostrando solo <strong>{(OBJ_LABELS[objFilter.overview]||OBJ_LABELS.otro).label}</strong> — {filteredCamps.length} campañas · el CPR promedio es comparable dentro de este objetivo.</span>
+                      </div>
+                    )}
+
+                    <div style={{ background:C.white, borderRadius:14, padding:"24px 26px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", marginBottom:18 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20, flexWrap:"wrap", gap:10 }}>
                         <div>
-                          <div style={{ fontSize:16, fontWeight:700 }}>Ranking de campañas por CPL</div>
-                          <div style={{ fontSize:12, color:C.gray, marginTop:3 }}>De peor a mejor · CPL promedio: ${avgCPL.toLocaleString("es-CL")}</div>
+                          <div style={{ fontSize:15, fontWeight:700 }}>Ranking por Costo por Resultado</div>
+                          <div style={{ fontSize:11, color:C.gray, marginTop:2 }}>CPR promedio del filtro actual: ${avgCPL.toLocaleString("es-CL")}</div>
                         </div>
-                        <div style={{ display:"flex", gap:14 }}>
-                          {[[C.pink,"Crítico"],[C.orange,"Atención"],[C.blue,"Óptimo"]].map(([col,lbl],i) => (
-                            <div key={i} style={{ display:"flex", alignItems:"center", gap:6 }}>
-                              <div style={{ width:8, height:8, borderRadius:"50%", background:col }} />
+                        <div style={{ display:"flex", gap:12 }}>
+                          {[[C.pink,"Crítico"],[C.orange,"Atención"],[C.blue,"Óptimo"]].map(([col,lbl],i)=>(
+                            <div key={i} style={{ display:"flex", alignItems:"center", gap:5 }}>
+                              <div style={{ width:7, height:7, borderRadius:"50%", background:col }} />
                               <span style={{ fontSize:11, color:C.gray, fontWeight:600 }}>{lbl}</span>
                             </div>
                           ))}
                         </div>
                       </div>
-                      <div style={{ display:"flex", flexDirection:"column", gap:13 }}>
-                        {campaigns.filter(c=>c.leads>0).map((c,i) => (
-                          <div key={i} style={{ display:"grid", gridTemplateColumns:"28px 1fr 1fr", gap:12, alignItems:"center" }}>
-                            <div style={{ width:24, height:24, borderRadius:6, background:c.cpl>avgCPL*2?C.pink:c.cpl<avgCPL*0.7?C.blue:C.lightGray, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700, color:c.cpl>avgCPL*2||c.cpl<avgCPL*0.7?C.white:C.gray }}>{i+1}</div>
-                            <div>
-                              <div style={{ fontSize:13, fontWeight:600, color:C.black }}>{c.nombre}</div>
-                              <div style={{ fontSize:11, color:C.gray, marginTop:1 }}>{c.leads} leads · frec. {c.frecuencia.toFixed(1)}×</div>
+                      <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                        {campsWithLeads.map((c,i)=>{
+                          const meta = OBJ_LABELS[c.objetivo]||OBJ_LABELS.otro;
+                          return (
+                            <div key={i} style={{ display:"grid", gridTemplateColumns:"26px 16px 1fr 1fr", gap:10, alignItems:"center" }}>
+                              <div style={{ width:22, height:22, borderRadius:6, background:c.cpl>avgCPL*2?C.pink:c.cpl<avgCPL*0.7?C.blue:C.lightGray, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:c.cpl>avgCPL*2||c.cpl<avgCPL*0.7?C.white:C.gray }}>{i+1}</div>
+                              <span title={meta.label} style={{ fontSize:13 }}>{meta.icon}</span>
+                              <div>
+                                <div style={{ fontSize:12, fontWeight:600, color:C.black, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.nombre}</div>
+                                <div style={{ fontSize:10, color:C.gray, marginTop:1 }}>{c.leads} resultados · frec. {c.frecuencia.toFixed(1)}×</div>
+                              </div>
+                              <CPLBar cpl={c.cpl} max={campsWithLeads[0]?.cpl||1} avg={avgCPL} />
                             </div>
-                            <CPLBar cpl={c.cpl} max={campaigns[0]?.cpl||1} avg={avgCPL} />
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 
-                    {bestCPL.cpl > 0 && (
-                      <div style={{ background:C.blue+"10", border:`1.5px solid ${C.blue}25`, borderLeft:`4px solid ${C.blue}`, borderRadius:12, padding:"18px 22px" }}>
-                        <div style={{ fontSize:11, color:C.blue, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:8 }}>💡 Insight clave</div>
-                        <p style={{ margin:0, fontSize:14, color:C.darkGray, lineHeight:1.7 }}>
-                          <strong>{bestCPL.nombre}</strong> tiene el CPL más eficiente con <strong style={{ color:C.blue }}>${bestCPL.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}/lead</strong>
-                          {worstCPL.cpl > 0 && <> — <strong style={{ color:C.pink }}>{Math.round(worstCPL.cpl/bestCPL.cpl)}× más eficiente</strong> que {worstCPL.nombre}</>}.
+                    {bestCPL && (
+                      <div style={{ background:C.blue+"10", border:`1.5px solid ${C.blue}25`, borderLeft:`4px solid ${C.blue}`, borderRadius:12, padding:"16px 20px" }}>
+                        <div style={{ fontSize:10, color:C.blue, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:7 }}>💡 Insight</div>
+                        <p style={{ margin:0, fontSize:13, color:C.darkGray, lineHeight:1.7 }}>
+                          <strong>{bestCPL.nombre}</strong> tiene el CPR más eficiente con <strong style={{ color:C.blue }}>${Math.round(bestCPL.cpl).toLocaleString("es-CL")}/resultado</strong>
+                          {worstCPL && <> — <strong style={{ color:C.pink }}>{Math.round(worstCPL.cpl/bestCPL.cpl)}× más eficiente</strong> que {worstCPL.nombre}</>}.
+                          {objFilter.overview==="all" && campObjectives.length>1 && <span style={{ color:C.orange }}> Recuerda filtrar por objetivo para comparaciones justas.</span>}
                         </p>
                       </div>
                     )}
@@ -368,34 +458,35 @@
             {/* ── CREATIVOS ── */}
             {activeTab==="anuncios" && (
               <div>
-                {ads.length === 0 ? (
-                  <EmptyState onUpload={()=>setActiveTab("upload")} msg="Carga el reporte de Anuncios para ver el análisis de creativos." />
-                ) : (
+                {rawData.ads.length===0 ? <EmptyState onUpload={()=>setActiveTab("upload")} msg="Carga el reporte de Anuncios para ver el análisis de creativos." /> : (
                   <>
-                    <div style={{ background:C.black, borderRadius:14, padding:"22px 26px", marginBottom:24, color:C.white }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
-                        <div style={{ display:"flex", gap:4 }}>{[C.pink,C.blue,C.orange].map((c,i)=><div key={i} style={{ width:9, height:9, borderRadius:"50%", background:c }} />)}</div>
-                        <div style={{ fontSize:11, color:"#555", fontWeight:700, letterSpacing:"0.15em", textTransform:"uppercase" }}>Análisis de creativos</div>
+                    <ObjectiveFilter objectives={adsObjectives} active={objFilter.anuncios} onChange={v=>setFilter("anuncios",v)} />
+
+                    <div style={{ background:C.black, borderRadius:14, padding:"20px 24px", marginBottom:22, color:C.white }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                        <div style={{ display:"flex", gap:3 }}>{[C.pink,C.blue,C.orange].map((c,i)=><div key={i} style={{ width:8, height:8, borderRadius:"50%", background:c }} />)}</div>
+                        <div style={{ fontSize:10, color:"#555", fontWeight:700, letterSpacing:"0.15em", textTransform:"uppercase" }}>Análisis de creativos · {objFilter.anuncios==="all"?"Todos los objetivos":(OBJ_LABELS[objFilter.anuncios]||OBJ_LABELS.otro).label}</div>
                       </div>
-                      <p style={{ margin:"0 0 6px", fontSize:16, fontWeight:700 }}>Creativos estrella vs. creativos que necesitan cambio</p>
-                      <p style={{ margin:0, fontSize:13, color:"#aaa", lineHeight:1.7 }}>{ads.filter(a=>a.leads>0).length} anuncios con resultados · {ads.length} total</p>
+                      <p style={{ margin:0, fontSize:15, fontWeight:700 }}>{filteredAds.filter(a=>a.leads>0).length} anuncios con resultados de {filteredAds.length} total</p>
                     </div>
 
-                    <div style={{ marginBottom:24 }}>
-                      <div style={{ fontSize:12, fontWeight:700, color:C.blue, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:14 }}>🏆 Top creativos — mejor CPL</div>
+                    <div style={{ marginBottom:22 }}>
+                      <div style={{ fontSize:11, fontWeight:700, color:C.blue, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:12 }}>🏆 Top creativos — mejor CPR</div>
                       <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                        {topAds.map((ad,i) => (
-                          <div key={i} style={{ background:C.white, borderRadius:12, padding:"14px 20px", boxShadow:"0 1px 4px rgba(0,0,0,0.05)", borderLeft:`4px solid ${i<2?C.blue:C.lightGray}`, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
-                            <div style={{ flex:1, minWidth:200 }}>
-                              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5, flexWrap:"wrap" }}>
-                                <span style={{ fontSize:13, fontWeight:700, color:C.black }}>{ad.nombre.length>45?ad.nombre.slice(0,45)+"…":ad.nombre}</span>
+                        {topAds.length===0 ? <div style={{ fontSize:13, color:C.gray, padding:"16px 0" }}>No hay anuncios con resultados en este filtro.</div> :
+                        topAds.map((ad,i)=>(
+                          <div key={i} style={{ background:C.white, borderRadius:12, padding:"13px 18px", boxShadow:"0 1px 4px rgba(0,0,0,.05)", borderLeft:`4px solid ${i<2?C.blue:C.lightGray}`, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10 }}>
+                            <div style={{ flex:1, minWidth:180 }}>
+                              <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:4, flexWrap:"wrap" }}>
+                                <span style={{ fontSize:12, fontWeight:700 }}>{ad.nombre.length>50?ad.nombre.slice(0,50)+"…":ad.nombre}</span>
                                 {i<2 && <Pill color={C.pink}>★ Estrella</Pill>}
+                                <span style={{ fontSize:11 }}>{(OBJ_LABELS[ad.objetivo]||OBJ_LABELS.otro).icon}</span>
                               </div>
-                              <div style={{ fontSize:11, color:C.gray }}>{ad.conjunto.length>50?ad.conjunto.slice(0,50)+"…":ad.conjunto}</div>
+                              <div style={{ fontSize:10, color:C.gray }}>{ad.conjunto.length>55?ad.conjunto.slice(0,55)+"…":ad.conjunto}</div>
                             </div>
                             <div style={{ textAlign:"right" }}>
-                              <div style={{ fontSize:11, color:C.gray, fontWeight:700, textTransform:"uppercase" }}>{ad.leads} leads</div>
-                              <div style={{ fontSize:20, fontWeight:700, color:C.blue }}>${ad.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}</div>
+                              <div style={{ fontSize:10, color:C.gray, fontWeight:700, textTransform:"uppercase" }}>{ad.leads} resultados</div>
+                              <div style={{ fontSize:19, fontWeight:700, color:C.blue }}>${Math.round(ad.cpl).toLocaleString("es-CL")}</div>
                             </div>
                           </div>
                         ))}
@@ -403,30 +494,31 @@
                     </div>
 
                     <div>
-                      <div style={{ fontSize:12, fontWeight:700, color:C.pink, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:14 }}>⚠ Creativos problemáticos — peor CPL</div>
+                      <div style={{ fontSize:11, fontWeight:700, color:C.pink, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:12 }}>⚠ Creativos problemáticos — peor CPR</div>
                       <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                        {worstAds.map((ad,i) => {
-                          const hasScores = ad.calidad!=="-" || ad.conversion!=="-";
-                          const isFunnel = ad.calidad.toLowerCase().includes("encima") && ad.conversion.toLowerCase().includes("abajo");
+                        {worstAds.length===0 ? <div style={{ fontSize:13, color:C.gray, padding:"16px 0" }}>No hay datos suficientes en este filtro.</div> :
+                        worstAds.map((ad,i)=>{
+                          const isFunnel = /encima|above/i.test(ad.calidad) && /abajo|below/i.test(ad.conversion);
                           return (
-                            <div key={i} style={{ background:C.white, borderRadius:12, padding:"14px 20px", boxShadow:"0 1px 4px rgba(0,0,0,0.05)", borderLeft:`4px solid ${C.pink}` }}>
-                              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:12 }}>
-                                <div style={{ flex:1, minWidth:200 }}>
-                                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6, flexWrap:"wrap" }}>
-                                    <span style={{ fontSize:13, fontWeight:700 }}>{ad.nombre.length>45?ad.nombre.slice(0,45)+"…":ad.nombre}</span>
+                            <div key={i} style={{ background:C.white, borderRadius:12, padding:"13px 18px", boxShadow:"0 1px 4px rgba(0,0,0,.05)", borderLeft:`4px solid ${C.pink}` }}>
+                              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:10 }}>
+                                <div style={{ flex:1, minWidth:180 }}>
+                                  <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:6, flexWrap:"wrap" }}>
+                                    <span style={{ fontSize:12, fontWeight:700 }}>{ad.nombre.length>50?ad.nombre.slice(0,50)+"…":ad.nombre}</span>
                                     {isFunnel && <Pill color={C.orange}>Problema post-clic</Pill>}
+                                    <span style={{ fontSize:11 }}>{(OBJ_LABELS[ad.objetivo]||OBJ_LABELS.otro).icon}</span>
                                   </div>
-                                  {hasScores && (
-                                    <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-                                      <div style={{ display:"flex", alignItems:"center", gap:5 }}><span style={{ fontSize:10, color:C.gray, fontWeight:600 }}>Calidad:</span><ScoreBadge val={ad.calidad} /></div>
-                                      <div style={{ display:"flex", alignItems:"center", gap:5 }}><span style={{ fontSize:10, color:C.gray, fontWeight:600 }}>Conversión:</span><ScoreBadge val={ad.conversion} /></div>
+                                  {(ad.calidad!=="-"||ad.conversion!=="-") && (
+                                    <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:4 }}>
+                                      <div style={{ display:"flex", alignItems:"center", gap:4 }}><span style={{ fontSize:10, color:C.gray, fontWeight:600 }}>Calidad:</span><ScoreBadge val={ad.calidad} /></div>
+                                      <div style={{ display:"flex", alignItems:"center", gap:4 }}><span style={{ fontSize:10, color:C.gray, fontWeight:600 }}>Conversión:</span><ScoreBadge val={ad.conversion} /></div>
                                     </div>
                                   )}
-                                  <div style={{ fontSize:11, color:C.gray, marginTop:5 }}>{ad.conjunto.length>50?ad.conjunto.slice(0,50)+"…":ad.conjunto}</div>
+                                  <div style={{ fontSize:10, color:C.gray }}>{ad.conjunto.length>55?ad.conjunto.slice(0,55)+"…":ad.conjunto}</div>
                                 </div>
                                 <div style={{ textAlign:"right" }}>
-                                  <div style={{ fontSize:11, color:C.gray, fontWeight:700, textTransform:"uppercase" }}>{ad.leads} leads</div>
-                                  <div style={{ fontSize:20, fontWeight:700, color:C.pink }}>${ad.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}</div>
+                                  <div style={{ fontSize:10, color:C.gray, fontWeight:700, textTransform:"uppercase" }}>{ad.leads} resultados</div>
+                                  <div style={{ fontSize:19, fontWeight:700, color:C.pink }}>${Math.round(ad.cpl).toLocaleString("es-CL")}</div>
                                 </div>
                               </div>
                             </div>
@@ -442,70 +534,77 @@
             {/* ── CAMPAÑAS CRÍTICAS ── */}
             {activeTab==="worst" && (
               <div>
-                {campaigns.length === 0 ? (
-                  <EmptyState onUpload={()=>setActiveTab("upload")} />
-                ) : criticalCamps.length === 0 ? (
-                  <div style={{ background:C.white, borderRadius:14, padding:"48px 32px", textAlign:"center", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
-                    <div style={{ fontSize:32, marginBottom:12 }}>🎉</div>
-                    <div style={{ fontSize:16, fontWeight:700, marginBottom:8 }}>No hay campañas críticas</div>
-                    <div style={{ fontSize:14, color:C.gray }}>Ninguna campaña supera 2× el CPL promedio. Buen trabajo.</div>
-                  </div>
-                ) : (
+                {rawData.campaigns.length===0 ? <EmptyState onUpload={()=>setActiveTab("upload")} /> : (
                   <>
-                    <div style={{ background:C.white, borderRadius:12, padding:"16px 22px", marginBottom:22, display:"flex", gap:24, flexWrap:"wrap", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", borderLeft:`4px solid ${C.pink}` }}>
-                      <div><div style={{ fontSize:10, color:C.gray, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}>CPL promedio</div><div style={{ fontSize:20, fontWeight:700, color:C.black, marginTop:4 }}>${avgCPL.toLocaleString("es-CL")}</div></div>
-                      <div><div style={{ fontSize:10, color:C.gray, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}>Campañas críticas</div><div style={{ fontSize:20, fontWeight:700, color:C.pink, marginTop:4 }}>{criticalCamps.length}</div></div>
-                      <div><div style={{ fontSize:10, color:C.gray, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}>Gasto en críticas</div><div style={{ fontSize:20, fontWeight:700, color:C.pink, marginTop:4 }}>CLP {criticalCamps.reduce((a,c)=>a+c.gasto,0).toLocaleString("es-CL")}</div></div>
-                    </div>
+                    <ObjectiveFilter objectives={campObjectives} active={objFilter.worst} onChange={v=>setFilter("worst",v)} />
 
-                    {criticalCamps.map((camp,idx) => (
-                      <div key={idx} style={{ background:C.white, borderRadius:14, marginBottom:12, overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", borderTop:`4px solid ${camp.cpl>avgCPL*4?C.pink:C.orange}` }}>
-                        <div onClick={()=>setExpandedCard(expandedCard===idx?null:idx)} style={{ padding:"18px 24px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
-                          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-                            <div style={{ background:camp.cpl>avgCPL*4?C.pink:C.orange, borderRadius:8, padding:"6px 12px" }}>
-                              <span style={{ fontSize:12, fontWeight:700, color:C.white, fontFamily:"monospace" }}>${camp.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}</span>
-                            </div>
-                            <div>
-                              <div style={{ fontSize:14, fontWeight:700 }}>{camp.nombre}</div>
-                              <div style={{ fontSize:11, color:C.gray, marginTop:2 }}>{camp.leads} leads · frec. {camp.frecuencia.toFixed(1)}× · CPL {(camp.cpl/avgCPL).toFixed(1)}× el promedio</div>
-                            </div>
-                          </div>
-                          <div style={{ fontSize:14, color:C.gray }}>{expandedCard===idx?"▲":"▼"}</div>
-                        </div>
-                        {expandedCard===idx && (
-                          <div style={{ padding:"0 24px 22px", borderTop:`1px solid ${C.lightGray}` }}>
-                            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))", gap:10, marginTop:18, marginBottom:18 }}>
-                              {[
-                                { label:"Leads", value:camp.leads },
-                                { label:"Gasto", value:`$${camp.gasto.toLocaleString("es-CL")}` },
-                                { label:"Frecuencia", value:`${camp.frecuencia.toFixed(1)}×`, alert:camp.frecuencia>3 },
-                                { label:"CPL vs avg", value:`${(camp.cpl/avgCPL).toFixed(1)}×`, alert:true },
-                                { label:"Alcance", value:camp.alcance.toLocaleString("es-CL"), alert:camp.alcance<15000 },
-                              ].map((m,i) => (
-                                <div key={i} style={{ background:m.alert?C.pink+"08":C.cream, border:`1px solid ${m.alert?C.pink+"25":C.lightGray}`, borderRadius:10, padding:"12px" }}>
-                                  <div style={{ fontSize:10, color:C.gray, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:5 }}>{m.label}</div>
-                                  <div style={{ fontSize:18, fontWeight:700, color:m.alert?C.pink:C.black }}>{m.value}</div>
-                                </div>
-                              ))}
-                            </div>
-                            <div style={{ background:C.cream, borderRadius:10, padding:"14px 18px" }}>
-                              <div style={{ fontSize:11, fontWeight:700, color:C.black, marginBottom:10, letterSpacing:"0.08em", textTransform:"uppercase" }}>Acciones recomendadas</div>
-                              {[
-                                camp.frecuencia > 4 && "⛔ Frecuencia crítica — renovar creativos o ampliar audiencia urgente",
-                                camp.alcance < 10000 && "🗺️ Alcance muy pequeño — ampliar targeting geográfico o etario",
-                                camp.cpl > avgCPL*4 && "💰 Considerar pausar y reasignar presupuesto a campañas con CPL < promedio",
-                                "🎯 Verificar que los intereses en Adv+ están como sugerencias, no restricciones",
-                                "📝 Revisar formulario — reducir a máximo 3 campos si tiene conversión baja",
-                              ].filter(Boolean).map((a,i) => (
-                                <div key={i} style={{ fontSize:13, color:C.darkGray, lineHeight:1.6, marginBottom:7, display:"flex", gap:8 }}>
-                                  <span>{a.slice(0,2)}</span><span>{a.slice(2)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                    {criticalCamps.length===0 ? (
+                      <div style={{ background:C.white, borderRadius:14, padding:"48px 32px", textAlign:"center", boxShadow:"0 1px 4px rgba(0,0,0,.06)" }}>
+                        <div style={{ fontSize:32, marginBottom:12 }}>🎉</div>
+                        <div style={{ fontSize:16, fontWeight:700, marginBottom:8 }}>No hay campañas críticas en este filtro</div>
+                        <div style={{ fontSize:14, color:C.gray }}>Ninguna campaña supera 2× el CPR promedio.</div>
                       </div>
-                    ))}
+                    ) : (
+                      <>
+                        <div style={{ background:C.white, borderRadius:12, padding:"14px 20px", marginBottom:20, display:"flex", gap:22, flexWrap:"wrap", boxShadow:"0 1px 4px rgba(0,0,0,.06)", borderLeft:`4px solid ${C.pink}` }}>
+                          <div><div style={{ fontSize:9, color:C.gray, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}>CPR promedio</div><div style={{ fontSize:19, fontWeight:700, color:C.black, marginTop:3 }}>${avgCPL.toLocaleString("es-CL")}</div></div>
+                          <div><div style={{ fontSize:9, color:C.gray, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}>Campañas críticas</div><div style={{ fontSize:19, fontWeight:700, color:C.pink, marginTop:3 }}>{criticalCamps.length}</div></div>
+                          <div><div style={{ fontSize:9, color:C.gray, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}>Gasto en críticas</div><div style={{ fontSize:19, fontWeight:700, color:C.pink, marginTop:3 }}>CLP {criticalCamps.reduce((a,c)=>a+c.gasto,0).toLocaleString("es-CL")}</div></div>
+                        </div>
+
+                        {criticalCamps.map((camp,idx)=>{
+                          const accentCol = camp.cpl>avgCPL*4?C.pink:C.orange;
+                          return (
+                            <div key={idx} style={{ background:C.white, borderRadius:14, marginBottom:10, overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,.06)", borderTop:`4px solid ${accentCol}` }}>
+                              <div onClick={()=>setExpanded(expanded===idx?null:idx)} style={{ padding:"16px 22px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10 }}>
+                                <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                                  <div style={{ background:accentCol, borderRadius:8, padding:"5px 11px" }}>
+                                    <span style={{ fontSize:12, fontWeight:700, color:C.white, fontFamily:"monospace" }}>${Math.round(camp.cpl).toLocaleString("es-CL")}</span>
+                                  </div>
+                                  <div>
+                                    <div style={{ fontSize:13, fontWeight:700 }}>{camp.nombre}</div>
+                                    <div style={{ fontSize:10, color:C.gray, marginTop:2 }}>{camp.leads} resultados · frec. {camp.frecuencia.toFixed(1)}× · {(camp.cpl/avgCPL).toFixed(1)}× el promedio · {(OBJ_LABELS[camp.objetivo]||OBJ_LABELS.otro).icon} {(OBJ_LABELS[camp.objetivo]||OBJ_LABELS.otro).label}</div>
+                                  </div>
+                                </div>
+                                <div style={{ fontSize:13, color:C.gray }}>{expanded===idx?"▲":"▼"}</div>
+                              </div>
+                              {expanded===idx && (
+                                <div style={{ padding:"0 22px 20px", borderTop:`1px solid ${C.lightGray}` }}>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))", gap:9, marginTop:16, marginBottom:16 }}>
+                                    {[
+                                      { label:"Resultados", value:camp.leads },
+                                      { label:"Gasto CLP", value:camp.gasto.toLocaleString("es-CL") },
+                                      { label:"Frecuencia", value:`${camp.frecuencia.toFixed(1)}×`, alert:camp.frecuencia>3 },
+                                      { label:"CPR vs avg", value:`${(camp.cpl/avgCPL).toFixed(1)}×`, alert:true },
+                                      { label:"Alcance", value:camp.alcance.toLocaleString("es-CL"), alert:camp.alcance<15000 },
+                                    ].map((m,i)=>(
+                                      <div key={i} style={{ background:m.alert?C.pink+"08":C.cream, border:`1px solid ${m.alert?C.pink+"25":C.lightGray}`, borderRadius:9, padding:"11px 12px" }}>
+                                        <div style={{ fontSize:9, color:C.gray, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:5 }}>{m.label}</div>
+                                        <div style={{ fontSize:17, fontWeight:700, color:m.alert?C.pink:C.black }}>{m.value}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div style={{ background:C.cream, borderRadius:10, padding:"13px 16px" }}>
+                                    <div style={{ fontSize:10, fontWeight:700, color:C.black, marginBottom:9, letterSpacing:"0.08em", textTransform:"uppercase" }}>Acciones recomendadas</div>
+                                    {[
+                                      camp.frecuencia>4 && "⛔ Frecuencia crítica — renovar creativos o ampliar audiencia urgente",
+                                      camp.alcance<10000 && "🗺️ Alcance muy pequeño — ampliar targeting geográfico o etario",
+                                      camp.cpl>avgCPL*4 && "💰 Considerar pausar y reasignar presupuesto a campañas con CPR < promedio",
+                                      "🎯 Verificar que los intereses en Adv+ están como sugerencias, no restricciones",
+                                      "📝 Revisar formulario — reducir a máximo 3 campos si tiene conversión baja",
+                                    ].filter(Boolean).map((a,i)=>(
+                                      <div key={i} style={{ fontSize:12, color:C.darkGray, lineHeight:1.6, marginBottom:6, display:"flex", gap:7 }}>
+                                        <span>{a.slice(0,2)}</span><span>{a.slice(2)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -514,51 +613,56 @@
             {/* ── ADV+ ── */}
             {activeTab==="advplus" && (
               <div>
-                <div style={{ background:C.black, borderRadius:14, padding:"24px 28px", marginBottom:24, color:C.white }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
-                    <div style={{ display:"flex", gap:4 }}>{[C.pink,C.blue,C.orange].map((c,i)=><div key={i} style={{ width:9, height:9, borderRadius:"50%", background:c }} />)}</div>
-                    <div style={{ fontSize:11, color:"#555", fontWeight:700, letterSpacing:"0.15em", textTransform:"uppercase" }}>Adv+ vs. Intereses</div>
+                <div style={{ background:C.black, borderRadius:14, padding:"22px 26px", marginBottom:22, color:C.white }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                    <div style={{ display:"flex", gap:3 }}>{[C.pink,C.blue,C.orange].map((c,i)=><div key={i} style={{ width:8, height:8, borderRadius:"50%", background:c }} />)}</div>
+                    <div style={{ fontSize:10, color:"#555", fontWeight:700, letterSpacing:"0.15em", textTransform:"uppercase" }}>Adv+ vs. Intereses</div>
                   </div>
-                  <p style={{ margin:"0 0 8px", fontSize:17, fontWeight:700 }}>El problema no es la herramienta — es el tamaño de la audiencia.</p>
-                  <p style={{ margin:0, fontSize:13, color:"#aaa", lineHeight:1.8 }}>Audiencias &gt;30k tienen CPL promedio <strong style={{ color:C.blue }}>óptimo</strong>. Audiencias &lt;15k tienen CPL <strong style={{ color:C.pink }}>crítico</strong>. No agregar restricciones de intereses — empeoraría el problema.</p>
+                  <p style={{ margin:"0 0 6px", fontSize:16, fontWeight:700 }}>El problema no es la herramienta — es el tamaño de la audiencia.</p>
+                  <p style={{ margin:0, fontSize:13, color:"#aaa", lineHeight:1.7 }}>Audiencias &gt;30k → CPR óptimo. Audiencias &lt;15k → CPR crítico. No agregues restricciones de intereses — empeoraría el problema.</p>
                 </div>
 
-                {adSetsWithLeads.length > 0 && (
-                  <div style={{ background:C.white, borderRadius:14, padding:"24px 28px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", marginBottom:22 }}>
-                    <div style={{ fontSize:15, fontWeight:700, marginBottom:4 }}>Alcance vs CPL por conjunto</div>
-                    <div style={{ fontSize:12, color:C.gray, marginBottom:22 }}>Barra = tamaño de audiencia · Color = nivel de CPL vs promedio</div>
-                    <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                      {adSetsWithLeads.map((a,i) => {
-                        const maxAlc = adSetsWithLeads[0]?.alcance||1;
-                        const pct = Math.min((a.alcance/maxAlc)*100,100);
-                        const col = a.cpl > avgCPL*3 ? C.pink : a.cpl > avgCPL*1.5 ? C.orange : C.blue;
-                        return (
-                          <div key={i} style={{ display:"grid", gridTemplateColumns:"150px 1fr 90px", gap:14, alignItems:"center" }}>
-                            <div style={{ fontSize:12, color:a.cpl<avgCPL?C.black:C.gray, fontWeight:a.cpl<avgCPL?600:400, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={a.nombre}>{a.nombre}</div>
-                            <div>
-                              <div style={{ height:6, background:C.cream, borderRadius:3 }}><div style={{ width:`${pct}%`, height:"100%", background:col, borderRadius:3 }} /></div>
-                              <div style={{ fontSize:10, color:C.gray, marginTop:2 }}>{a.alcance.toLocaleString("es-CL")} personas</div>
+                {rawData.adSets.length > 0 && (
+                  <>
+                    <ObjectiveFilter objectives={setsObjectives} active={objFilter.advplus} onChange={v=>setFilter("advplus",v)} />
+                    <div style={{ background:C.white, borderRadius:14, padding:"22px 26px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", marginBottom:20 }}>
+                      <div style={{ fontSize:14, fontWeight:700, marginBottom:3 }}>Alcance vs CPR por conjunto</div>
+                      <div style={{ fontSize:11, color:C.gray, marginBottom:20 }}>Barra = tamaño de audiencia · Color = nivel de CPR relativo al promedio</div>
+                      {setsWithLeads.length===0 ? <div style={{ fontSize:13, color:C.gray }}>No hay conjuntos con resultados en este filtro.</div> :
+                      <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
+                        {setsWithLeads.map((a,i)=>{
+                          const maxAlc = setsWithLeads[0]?.alcance||1;
+                          const setsAvgCPL = setsWithLeads.reduce((s,x)=>s+x.cpl,0)/setsWithLeads.length;
+                          const pct = Math.min((a.alcance/maxAlc)*100,100);
+                          const col = a.cpl>setsAvgCPL*2?C.pink:a.cpl>setsAvgCPL*1.3?C.orange:C.blue;
+                          return (
+                            <div key={i} style={{ display:"grid", gridTemplateColumns:"140px 1fr 90px", gap:12, alignItems:"center" }}>
+                              <div style={{ fontSize:11, color:a.cpl<setsAvgCPL?C.black:C.gray, fontWeight:a.cpl<setsAvgCPL?600:400, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }} title={a.nombre}>{a.nombre}</div>
+                              <div>
+                                <div style={{ height:5, background:C.cream, borderRadius:3 }}><div style={{ width:`${pct}%`, height:"100%", background:col, borderRadius:3 }} /></div>
+                                <div style={{ fontSize:9, color:C.gray, marginTop:2 }}>{a.alcance.toLocaleString("es-CL")} personas</div>
+                              </div>
+                              <div style={{ fontSize:12, fontWeight:700, color:col, textAlign:"right", fontFamily:"monospace" }}>${Math.round(a.cpl).toLocaleString("es-CL")}</div>
                             </div>
-                            <div style={{ fontSize:13, fontWeight:700, color:col, textAlign:"right", fontFamily:"monospace" }}>${a.cpl.toLocaleString("es-CL",{maximumFractionDigits:0})}</div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>}
                     </div>
-                  </div>
+                  </>
                 )}
 
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap:14 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))", gap:14 }}>
                   {[
-                    { titulo:"✅ Sigue usando Adv+", color:C.blue, puntos:["Adv+ funciona bien con audiencias grandes (+30k)","No cambies lo que ya genera buen CPL","Usa los datos de alcance arriba para identificar dónde hay problemas"] },
-                    { titulo:"⚙ Cómo usar intereses en Adv+", color:C.orange, puntos:["Agrégalos como SUGERENCIAS, no restricciones duras","Meta puede salir de esos intereses si encuentra mejores audiencias","Úsalos para orientar el algoritmo, no para limitarlo"] },
-                    { titulo:"🚫 Lo que NO hacer", color:C.pink, puntos:["No agregar restricciones a conjuntos con alcance < 15k","No segmentar por edad muy específica en nichos pequeños","No crear nuevos conjuntos sin revisar el tamaño estimado de audiencia primero"] },
-                  ].map((card,i) => (
-                    <div key={i} style={{ background:C.white, borderRadius:12, padding:"20px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)", borderTop:`4px solid ${card.color}` }}>
-                      <div style={{ fontSize:13, fontWeight:700, color:card.color, marginBottom:14 }}>{card.titulo}</div>
-                      {card.puntos.map((p,j) => (
-                        <div key={j} style={{ display:"flex", gap:10, alignItems:"flex-start", marginBottom:9 }}>
-                          <div style={{ width:5, height:5, borderRadius:"50%", background:card.color, marginTop:7, flexShrink:0 }} />
-                          <div style={{ fontSize:12, color:C.darkGray, lineHeight:1.6 }}>{p}</div>
+                    { titulo:"✅ Sigue usando Adv+", color:C.blue, puntos:["Adv+ funciona bien con audiencias grandes (+30k)","No cambies lo que ya genera buen CPR","Usa el gráfico de arriba para identificar dónde hay problemas de tamaño"] },
+                    { titulo:"⚙ Intereses en Adv+", color:C.orange, puntos:["Agrégalos como SUGERENCIAS, no restricciones duras","Meta puede salir de esos intereses si encuentra mejores audiencias","Úsalos para orientar el algoritmo, no para limitarlo"] },
+                    { titulo:"🚫 Lo que NO hacer", color:C.pink, puntos:["No agregar restricciones a conjuntos con alcance < 15k","No segmentar por edad muy específica en nichos pequeños","No crear conjuntos sin revisar el tamaño estimado de audiencia"] },
+                  ].map((card,i)=>(
+                    <div key={i} style={{ background:C.white, borderRadius:12, padding:"18px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", borderTop:`4px solid ${card.color}` }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:card.color, marginBottom:12 }}>{card.titulo}</div>
+                      {card.puntos.map((p,j)=>(
+                        <div key={j} style={{ display:"flex", gap:9, alignItems:"flex-start", marginBottom:8 }}>
+                          <div style={{ width:5, height:5, borderRadius:"50%", background:card.color, marginTop:6, flexShrink:0 }} />
+                          <div style={{ fontSize:12, color:C.darkGray, lineHeight:1.5 }}>{p}</div>
                         </div>
                       ))}
                     </div>
@@ -572,17 +676,7 @@
       );
     }
 
-    const EmptyState = ({ onUpload, msg }) => (
-      <div style={{ background:C.white, borderRadius:14, padding:"56px 32px", textAlign:"center", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
-        <div style={{ fontSize:36, marginBottom:14 }}>📂</div>
-        <div style={{ fontSize:16, fontWeight:700, marginBottom:8 }}>No hay datos cargados</div>
-        <div style={{ fontSize:14, color:C.gray, marginBottom:22 }}>{msg || "Importa tus reportes de Meta Ads para ver el análisis."}</div>
-        <button onClick={onUpload} style={{ background:C.black, color:C.white, border:"none", borderRadius:8, padding:"11px 24px", fontSize:13, fontWeight:700 }}>Ir a Importar datos →</button>
-      </div>
-    );
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>
