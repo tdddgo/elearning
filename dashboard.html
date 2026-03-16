@@ -209,6 +209,8 @@
 
       // Active objective filter per tab
       const [objFilter, setObjFilter] = useState({ overview:"all", anuncios:"all", worst:"all", advplus:"all" });
+      const [apiKey, setApiKey] = useState(() => localStorage.getItem("mas_anthropic_key") || "");
+      const [apiKeySaved, setApiKeySaved] = useState(() => !!localStorage.getItem("mas_anthropic_key"));
       const [chatMessages, setChatMessages] = useState([]);
       const [chatInput, setChatInput] = useState("");
       const [chatLoading, setChatLoading] = useState(false);
@@ -293,6 +295,7 @@
       const sendMessage = async () => {
         const q = chatInput.trim();
         if (!q || chatLoading) return;
+        if (!apiKey.trim()) { setChatMessages(prev=>[...prev,{role:"assistant",content:"⚠️ Ingresa tu API key de Anthropic primero."}]); setChatLoading(false); return; }
         const ctx = buildContext();
         const userMsg = { role:"user", content:q };
         setChatMessages(prev => [...prev, userMsg]);
@@ -304,7 +307,7 @@
             : "Eres un analista de Meta Ads experto. No hay datos cargados aún — indica al usuario que cargue sus CSVs primero. Responde en español.";
           const res = await fetch("https://api.anthropic.com/v1/messages", {
             method:"POST",
-            headers:{ "Content-Type":"application/json" },
+            headers:{ "Content-Type":"application/json", "x-api-key": apiKey, "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
             body: JSON.stringify({
               model:"claude-sonnet-4-20250514",
               max_tokens:1000,
