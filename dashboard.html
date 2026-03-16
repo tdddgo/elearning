@@ -200,6 +200,412 @@
       );
     };
 
+
+    // ── ANÁLISIS ENGINE ──────────────────────────────────────
+    function AnalisisEngine({ campaigns, adSets, ads }) {
+      const [activeSection, setActiveSection] = useState("resumen");
+
+      const totalGasto = campaigns.reduce((a,c)=>a+c.gasto,0);
+      const totalLeads = campaigns.reduce((a,c)=>a+c.leads,0);
+      const avgCPL = totalLeads>0 ? totalGasto/totalLeads : 0;
+      const campsWithLeads = campaigns.filter(c=>c.leads>0).sort((a,b)=>a.cpl-b.cpl);
+      const best = campsWithLeads[0];
+      const worst = campsWithLeads[campsWithLeads.length-1];
+
+      // Efficiency: leads per 1000 CLP
+      const eff = c => c.gasto>0 ? (c.leads/(c.gasto/1000)) : 0;
+
+      // Criticals
+      const criticals = campsWithLeads.filter(c=>c.cpl>avgCPL*2);
+      const wastedGasto = criticals.reduce((a,c)=>a+c.gasto,0);
+      const noLeads = campaigns.filter(c=>c.gasto>0&&c.leads===0);
+
+      // Concentration
+      const sortedSpend = [...campaigns].sort((a,b)=>b.gasto-a.gasto);
+      const top3pct = totalGasto>0 ? Math.round(sortedSpend.slice(0,3).reduce((a,c)=>a+c.gasto,0)/totalGasto*100) : 0;
+
+      // Saturation
+      const saturated = campaigns.filter(c=>c.frecuencia>4);
+      const smallAudience = campaigns.filter(c=>c.alcance>0&&c.alcance<12000&&c.leads>0);
+
+      // Best ad
+      const topAd = [...ads].filter(a=>a.leads>=3).sort((a,b)=>a.cpl-b.cpl)[0];
+
+      // Reallocation potential
+      const savings = criticals.reduce((a,c)=>a+c.gasto*0.6,0) + noLeads.reduce((a,c)=>a+c.gasto,0);
+      const extraLeads = best ? Math.round(savings/best.cpl) : 0;
+
+      // By objective
+      const byObj = {};
+      campaigns.forEach(c=>{
+        if(!byObj[c.objetivo]) byObj[c.objetivo]={camps:[],leads:0,gasto:0};
+        byObj[c.objetivo].camps.push(c);
+        byObj[c.objetivo].leads+=c.leads;
+        byObj[c.objetivo].gasto+=c.gasto;
+      });
+
+      // Funnel problems in ads
+      const funnelIssues = ads.filter(a=>/encima|above/i.test(a.calidad)&&/abajo|below/i.test(a.conversion)&&a.leads>0);
+
+      // Opportunities ranked by impact
+      const opportunities = [];
+      if(criticals.length>0) opportunities.push({
+        titulo:`Pausar/recortar ${criticals.length} campaña${criticals.length>1?"s":""} crítica${criticals.length>1?"s":""}`,
+        impacto: `Libera CLP ${Math.round(savings).toLocaleString("es-CL")} → ~${extraLeads} leads adicionales si se redirige a ${best?.nombre||"mejor campaña"}`,
+        urgencia:"HOY", color:C.pink, icon:"⛔",
+        detalle: criticals.map(c=>`${c.nombre}: CPL $${Math.round(c.cpl).toLocaleString("es-CL")} (${Math.round(c.cpl/avgCPL)}x el promedio), gasto CLP ${c.gasto.toLocaleString("es-CL")}`),
+      });
+      if(saturated.length>0) opportunities.push({
+        titulo:`Renovar creativos en ${saturated.length} campaña${saturated.length>1?"s":""} saturadas`,
+        impacto:`Frecuencia >4x = audiencia agotada. Creativos nuevos pueden reducir CPL hasta 40%`,
+        urgencia:"ESTA SEMANA", color:C.orange, icon:"🎨",
+        detalle: saturated.map(c=>`${c.nombre}: frecuencia ${c.frecuencia.toFixed(1)}x, alcance ${c.alcance.toLocaleString("es-CL")} personas`),
+      });
+      if(smallAudience.length>0) opportunities.push({
+        titulo:`Ampliar audiencia en ${smallAudience.length} campaña${smallAudience.length>1?"s":""} con alcance microscópico`,
+        impacto:`Adv+ necesita mínimo 50k personas para optimizar. Audiencias <12k generan CPL hasta 10x mayor`,
+        urgencia:"ESTA SEMANA", color:C.orange, icon:"🗺️",
+        detalle: smallAudience.map(c=>`${c.nombre}: solo ${c.alcance.toLocaleString("es-CL")} personas alcanzadas`),
+      });
+      if(funnelIssues.length>0) opportunities.push({
+        titulo:`Arreglar formularios con problema post-clic`,
+        impacto:`${funnelIssues.length} anuncio${funnelIssues.length>1?"s":""} con calidad alta pero conversión baja → el creativo funciona, el formulario no. Simplificar a 3 campos puede bajar CPL 30-50%`,
+        urgencia:"ESTA SEMANA", color:C.blue, icon:"📝",
+        detalle: funnelIssues.map(a=>`"${a.nombre.slice(0,45)}": calidad ${a.calidad} → conversión ${a.conversion}`),
+      });
+      if(noLeads.length>0) opportunities.push({
+        titulo:`Eliminar ${noLeads.length} campaña${noLeads.length>1?"s":""} con gasto sin resultados`,
+        impacto:`CLP ${noLeads.reduce((a,c)=>a+c.gasto,0).toLocaleString("es-CL")} gastados en campañas con 0 leads`,
+        urgencia:"HOY", color:C.pink, icon:"🗑️",
+        detalle: noLeads.map(c=>`${c.nombre}: CLP ${c.gasto.toLocaleString("es-CL")} gastados, 0 leads`),
+      });
+
+      const sections = [
+        { id:"resumen", label:"Resumen ejecutivo" },
+        { id:"eficiencia", label:"Eficiencia comparativa" },
+        { id:"oportunidades", label:`Oportunidades (${opportunities.length})` },
+        { id:"objetivos", label:"Por objetivo" },
+        { id:"creativos", label:"Creativos" },
+      ];
+
+      return (
+        <div>
+          {/* Section nav */}
+          <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:24 }}>
+            {sections.map(s=>(
+              <button key={s.id} onClick={()=>setActiveSection(s.id)}
+                style={{ background:activeSection===s.id?C.black:"transparent", color:activeSection===s.id?C.white:C.gray, border:`1.5px solid ${activeSection===s.id?C.black:C.lightGray}`, borderRadius:100, padding:"7px 16px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── RESUMEN EJECUTIVO ── */}
+          {activeSection==="resumen" && (
+            <div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))", gap:12, marginBottom:22 }}>
+                {[
+                  { label:"Gasto total", value:`CLP ${(totalGasto/1000000).toFixed(2)}M`, color:C.black },
+                  { label:"Total leads", value:totalLeads, color:C.blue },
+                  { label:"CPL promedio", value:`$${Math.round(avgCPL).toLocaleString("es-CL")}`, color:C.blue },
+                  { label:"Mejor CPL", value:`$${best?Math.round(best.cpl).toLocaleString("es-CL"):"—"}`, sub:best?.nombre?.slice(0,25), color:C.blue },
+                  { label:"Peor CPL", value:`$${worst?Math.round(worst.cpl).toLocaleString("es-CL"):"—"}`, sub:worst?.nombre?.slice(0,25), color:C.pink },
+                  { label:"Presupuesto en riesgo", value:`${totalGasto>0?Math.round(wastedGasto/totalGasto*100):0}%`, sub:`CLP ${Math.round(wastedGasto).toLocaleString("es-CL")}`, color:C.orange },
+                  { label:"Ratio peor/mejor CPL", value:best&&worst?`${Math.round(worst.cpl/best.cpl)}x`:"—", sub:"brecha de eficiencia", color:C.pink },
+                  { label:"Concentración top 3", value:`${top3pct}%`, sub:"del presupuesto", color:top3pct>60?C.orange:C.black },
+                ].map((k,i)=>(
+                  <div key={i} style={{ background:C.white, borderRadius:12, padding:"16px 14px", borderTop:`4px solid ${k.color}`, boxShadow:"0 1px 4px rgba(0,0,0,.06)" }}>
+                    <div style={{ fontSize:9, color:C.gray, letterSpacing:"0.14em", textTransform:"uppercase", fontWeight:700, marginBottom:7 }}>{k.label}</div>
+                    <div style={{ fontSize:20, fontWeight:700, color:k.color===C.black?C.black:k.color }}>{k.value}</div>
+                    {k.sub && <div style={{ fontSize:9, color:C.gray, marginTop:3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{k.sub}</div>}
+                  </div>
+                ))}
+              </div>
+
+              {/* Key findings */}
+              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                {[
+                  best&&worst&&worst.cpl/best.cpl>5 && { type:"alert", icon:"🚨", msg:`Brecha crítica de eficiencia: ${worst.nombre.slice(0,35)} cuesta ${Math.round(worst.cpl/best.cpl)}x más por lead que ${best.nombre.slice(0,35)}. Mismo presupuesto, resultados completamente distintos.` },
+                  wastedGasto>totalGasto*0.2 && { type:"alert", icon:"💸", msg:`El ${Math.round(wastedGasto/totalGasto*100)}% del presupuesto (CLP ${Math.round(wastedGasto).toLocaleString("es-CL")}) está en campañas con CPL más de 2x el promedio. Redirigirlo a las mejores campañas generaría ~${Math.round(wastedGasto/avgCPL)} leads adicionales.` },
+                  saturated.length>0 && { type:"warning", icon:"🔁", msg:`${saturated.length} campaña${saturated.length>1?"s":""} con frecuencia >4x: ${saturated.map(c=>c.nombre.slice(0,20)).join(", ")}. La audiencia ya vio el anuncio demasiadas veces — necesita creativos nuevos.` },
+                  smallAudience.length>0 && { type:"warning", icon:"👥", msg:`${smallAudience.length} campaña${smallAudience.length>1?"s":""} con audiencia <12.000 personas. Adv+ no puede optimizar con tan poca masa — ampliar targeting o fusionar conjuntos.` },
+                  funnelIssues.length>0 && { type:"info", icon:"📝", msg:`${funnelIssues.length} anuncio${funnelIssues.length>1?"s":""} con calidad alta pero conversión baja. El creativo funciona, el formulario no convierte — simplificar a máx 3 campos.` },
+                  best && { type:"info", icon:"🏆", msg:`${best.nombre} es la campaña más eficiente con $${Math.round(best.cpl).toLocaleString("es-CL")}/lead y ${eff(best).toFixed(2)} leads por cada 1.000 CLP. Prioridad de inversión.` },
+                  topAd && { type:"info", icon:"✨", msg:`Mejor anuncio: "${topAd.nombre.slice(0,45)}" con CPL $${Math.round(topAd.cpl).toLocaleString("es-CL")} — replicar este formato en campañas críticas.` },
+                ].filter(Boolean).map((f,i)=>{
+                  const bg = f.type==="alert"?C.pink+"10":f.type==="warning"?C.orange+"10":C.blue+"10";
+                  const border = f.type==="alert"?C.pink:f.type==="warning"?C.orange:C.blue;
+                  return (
+                    <div key={i} style={{ background:bg, borderLeft:`4px solid ${border}`, borderRadius:10, padding:"13px 16px", display:"flex", gap:12 }}>
+                      <span style={{ fontSize:16, flexShrink:0 }}>{f.icon}</span>
+                      <span style={{ fontSize:13, color:C.darkGray, lineHeight:1.6 }}>{f.msg}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── EFICIENCIA COMPARATIVA ── */}
+          {activeSection==="eficiencia" && (
+            <div>
+              <div style={{ background:C.white, borderRadius:14, padding:"24px 26px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", marginBottom:18 }}>
+                <div style={{ fontSize:15, fontWeight:700, marginBottom:4 }}>Leads por cada 1.000 CLP gastados</div>
+                <div style={{ fontSize:12, color:C.gray, marginBottom:22 }}>La métrica más honesta para comparar campañas de distinto tamaño · Promedio general: {(totalLeads/(totalGasto/1000)).toFixed(2)}</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                  {[...campaigns].filter(c=>c.leads>0).sort((a,b)=>eff(b)-eff(a)).map((c,i)=>{
+                    const maxEff = eff([...campaigns].filter(x=>x.leads>0).sort((a,b)=>eff(b)-eff(a))[0]);
+                    const pct = Math.min((eff(c)/maxEff)*100,100);
+                    const col = eff(c)>=(totalLeads/(totalGasto/1000))*1.5?C.blue:eff(c)>=(totalLeads/(totalGasto/1000))*0.7?C.orange:C.pink;
+                    const pctGasto = totalGasto>0?Math.round(c.gasto/totalGasto*100):0;
+                    return (
+                      <div key={i} style={{ display:"grid", gridTemplateColumns:"26px 1fr 140px 80px", gap:12, alignItems:"center" }}>
+                        <div style={{ width:22, height:22, borderRadius:6, background:i===0?C.blue:i<3?C.blue+"80":C.lightGray, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:i<3?C.white:C.gray }}>{i+1}</div>
+                        <div>
+                          <div style={{ fontSize:12, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.nombre}</div>
+                          <div style={{ display:"flex", gap:6, marginTop:3 }}>
+                            <div style={{ height:4, width:`${pct}%`, background:col, borderRadius:2, minWidth:4, maxWidth:200 }} />
+                          </div>
+                        </div>
+                        <div style={{ fontSize:11, color:C.gray, textAlign:"center" }}>
+                          <span style={{ fontWeight:700, color:col, fontSize:13 }}>{eff(c).toFixed(2)}</span> leads/1k CLP
+                        </div>
+                        <div style={{ fontSize:11, color:C.gray, textAlign:"right" }}>
+                          <div style={{ fontWeight:600 }}>{pctGasto}% budget</div>
+                          <div>{c.leads} leads</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Spend vs leads bubble comparison */}
+              <div style={{ background:C.white, borderRadius:14, padding:"24px 26px", boxShadow:"0 1px 4px rgba(0,0,0,.06)" }}>
+                <div style={{ fontSize:15, fontWeight:700, marginBottom:4 }}>Gasto vs Leads — desbalances</div>
+                <div style={{ fontSize:12, color:C.gray, marginBottom:18 }}>Campañas donde el gasto y los leads están muy desproporcionados</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                  {[...campaigns].filter(c=>c.leads>0).sort((a,b)=>b.gasto-a.gasto).map((c,i)=>{
+                    const pctGasto = totalGasto>0?Math.round(c.gasto/totalGasto*100):0;
+                    const pctLeads = totalLeads>0?Math.round(c.leads/totalLeads*100):0;
+                    const diff = pctGasto - pctLeads;
+                    const isWasting = diff > 8;
+                    const isUnder = diff < -8;
+                    return (
+                      <div key={i} style={{ background:isWasting?C.pink+"08":isUnder?C.blue+"08":C.cream, borderRadius:10, padding:"12px 16px", border:`1px solid ${isWasting?C.pink+"25":isUnder?C.blue+"25":C.lightGray}` }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                          <div style={{ fontSize:12, fontWeight:700 }}>{c.nombre.slice(0,45)}</div>
+                          {isWasting && <span style={{ fontSize:10, background:C.pink+"18", color:C.pink, fontWeight:700, padding:"2px 8px", borderRadius:100 }}>Gasto alto, poco retorno</span>}
+                          {isUnder && <span style={{ fontSize:10, background:C.blue+"18", color:C.blue, fontWeight:700, padding:"2px 8px", borderRadius:100 }}>Subfinanciada</span>}
+                        </div>
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+                          <div>
+                            <div style={{ fontSize:9, color:C.gray, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em" }}>% del gasto</div>
+                            <div style={{ fontSize:18, fontWeight:700, color:isWasting?C.pink:C.black }}>{pctGasto}%</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize:9, color:C.gray, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em" }}>% de leads</div>
+                            <div style={{ fontSize:18, fontWeight:700, color:isUnder?C.blue:C.black }}>{pctLeads}%</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize:9, color:C.gray, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em" }}>Desbalance</div>
+                            <div style={{ fontSize:18, fontWeight:700, color:isWasting?C.pink:isUnder?C.blue:C.gray }}>{diff>0?"+":""}{diff}pp</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── OPORTUNIDADES ── */}
+          {activeSection==="oportunidades" && (
+            <div>
+              {/* Impact summary */}
+              <div style={{ background:C.black, borderRadius:14, padding:"22px 26px", marginBottom:22, color:C.white }}>
+                <div style={{ fontSize:11, color:"#555", fontWeight:700, letterSpacing:"0.15em", textTransform:"uppercase", marginBottom:10 }}>💰 Potencial de mejora identificado</div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:18 }}>
+                  <div>
+                    <div style={{ fontSize:10, color:"#444", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em" }}>Presupuesto recuperable</div>
+                    <div style={{ fontSize:24, fontWeight:700, color:C.pink, marginTop:4 }}>CLP {Math.round(savings).toLocaleString("es-CL")}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:10, color:"#444", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em" }}>Leads adicionales estimados</div>
+                    <div style={{ fontSize:24, fontWeight:700, color:C.blue, marginTop:4 }}>~{extraLeads}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:10, color:"#444", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em" }}>Oportunidades detectadas</div>
+                    <div style={{ fontSize:24, fontWeight:700, color:C.orange, marginTop:4 }}>{opportunities.length}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                {opportunities.map((op,i)=>(
+                  <div key={i} style={{ background:C.white, borderRadius:14, overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,.06)", borderLeft:`5px solid ${op.color}` }}>
+                    <div style={{ padding:"18px 22px" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10, flexWrap:"wrap", gap:8 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                          <span style={{ fontSize:20 }}>{op.icon}</span>
+                          <div>
+                            <div style={{ fontSize:14, fontWeight:700 }}>{op.titulo}</div>
+                            <span style={{ background:op.color+"18", color:op.color, fontSize:10, fontWeight:700, padding:"2px 9px", borderRadius:100, marginTop:4, display:"inline-block" }}>{op.urgencia}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ background:op.color+"08", borderRadius:8, padding:"11px 14px", marginBottom:12 }}>
+                        <div style={{ fontSize:10, color:op.color, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>Impacto estimado</div>
+                        <div style={{ fontSize:13, color:C.darkGray, lineHeight:1.6 }}>{op.impacto}</div>
+                      </div>
+                      <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                        {op.detalle.map((d,j)=>(
+                          <div key={j} style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
+                            <div style={{ width:4, height:4, borderRadius:"50%", background:op.color, marginTop:7, flexShrink:0 }} />
+                            <div style={{ fontSize:12, color:C.gray, lineHeight:1.5 }}>{d}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── POR OBJETIVO ── */}
+          {activeSection==="objetivos" && (
+            <div>
+              <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                {Object.entries(byObj).map(([obj,data])=>{
+                  const meta = OBJ_LABELS[obj]||OBJ_LABELS.otro;
+                  const objCPL = data.leads>0?Math.round(data.gasto/data.leads):0;
+                  const objCamps = data.camps.filter(c=>c.leads>0).sort((a,b)=>a.cpl-b.cpl);
+                  return (
+                    <div key={obj} style={{ background:C.white, borderRadius:14, padding:"22px 26px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", borderTop:`4px solid ${meta.color}` }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18, flexWrap:"wrap", gap:10 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                          <span style={{ fontSize:24 }}>{meta.icon}</span>
+                          <div>
+                            <div style={{ fontSize:15, fontWeight:700 }}>{meta.label}</div>
+                            <div style={{ fontSize:11, color:C.gray }}>{data.camps.length} campañas · {data.leads} resultados</div>
+                          </div>
+                        </div>
+                        <div style={{ textAlign:"right" }}>
+                          <div style={{ fontSize:10, color:C.gray, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em" }}>CPR promedio del objetivo</div>
+                          <div style={{ fontSize:22, fontWeight:700, color:meta.color }}>${objCPL.toLocaleString("es-CL")}</div>
+                        </div>
+                      </div>
+                      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:10, marginBottom:16 }}>
+                        {[
+                          { label:"Gasto total", value:`CLP ${(data.gasto/1000000).toFixed(2)}M` },
+                          { label:"Resultados", value:data.leads },
+                          { label:"Mejor CPR", value:objCamps.length?`$${Math.round(objCamps[0].cpl).toLocaleString("es-CL")}`:"—" },
+                          { label:"Peor CPR", value:objCamps.length?`$${Math.round(objCamps[objCamps.length-1].cpl).toLocaleString("es-CL")}`:"—" },
+                        ].map((m,i)=>(
+                          <div key={i} style={{ background:C.cream, borderRadius:9, padding:"11px 12px" }}>
+                            <div style={{ fontSize:9, color:C.gray, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:5 }}>{m.label}</div>
+                            <div style={{ fontSize:16, fontWeight:700, color:C.black }}>{m.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {objCamps.length > 0 && (
+                        <div>
+                          <div style={{ fontSize:10, color:C.gray, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:10 }}>Ranking dentro del objetivo</div>
+                          <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+                            {objCamps.map((c,i)=>(
+                              <div key={i} style={{ display:"grid", gridTemplateColumns:"22px 1fr auto", gap:10, alignItems:"center" }}>
+                                <div style={{ width:20, height:20, borderRadius:5, background:i===0?meta.color:C.lightGray, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:i===0?C.white:C.gray }}>{i+1}</div>
+                                <div style={{ fontSize:12, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.nombre}</div>
+                                <div style={{ fontSize:13, fontWeight:700, color:i===0?meta.color:C.gray, fontFamily:"monospace" }}>${Math.round(c.cpl).toLocaleString("es-CL")}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── CREATIVOS ── */}
+          {activeSection==="creativos" && (
+            <div>
+              {ads.length===0 ? (
+                <EmptyState onUpload={()=>{}} msg="Carga el reporte de Anuncios para ver el análisis de creativos." />
+              ) : (
+                <div>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:14, marginBottom:22 }}>
+                    {[
+                      { label:"Total anuncios", value:ads.length, color:C.black },
+                      { label:"Con resultados", value:ads.filter(a=>a.leads>0).length, color:C.blue },
+                      { label:"Problema post-clic", value:funnelIssues.length, sub:"calidad alta, conv. baja", color:funnelIssues.length>0?C.orange:C.blue },
+                      { label:"Mejor CPL anuncio", value:topAd?`$${Math.round(topAd.cpl).toLocaleString("es-CL")}`:"—", sub:topAd?.nombre?.slice(0,22), color:C.blue },
+                    ].map((k,i)=>(
+                      <div key={i} style={{ background:C.white, borderRadius:12, padding:"16px 14px", borderTop:`4px solid ${k.color}`, boxShadow:"0 1px 4px rgba(0,0,0,.06)" }}>
+                        <div style={{ fontSize:9, color:C.gray, letterSpacing:"0.14em", textTransform:"uppercase", fontWeight:700, marginBottom:7 }}>{k.label}</div>
+                        <div style={{ fontSize:20, fontWeight:700, color:k.color===C.black?C.black:k.color }}>{k.value}</div>
+                        {k.sub && <div style={{ fontSize:9, color:C.gray, marginTop:3 }}>{k.sub}</div>}
+                      </div>
+                    ))}
+                  </div>
+
+                  {funnelIssues.length>0 && (
+                    <div style={{ background:C.white, borderRadius:14, padding:"22px 24px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", marginBottom:14, borderLeft:`4px solid ${C.orange}` }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:C.orange, marginBottom:12 }}>⚠ Anuncios con problema post-clic</div>
+                      <p style={{ fontSize:13, color:C.gray, marginBottom:14, lineHeight:1.6 }}>
+                        Estos anuncios tienen <strong>calidad encima del promedio</strong> pero <strong>conversión abajo del promedio</strong>. El creativo funciona — el formulario no. Simplificar a 3 campos puede resolver esto.
+                      </p>
+                      {funnelIssues.map((a,i)=>(
+                        <div key={i} style={{ background:C.cream, borderRadius:9, padding:"11px 14px", marginBottom:7 }}>
+                          <div style={{ fontSize:12, fontWeight:700, marginBottom:4 }}>{a.nombre.slice(0,55)}</div>
+                          <div style={{ display:"flex", gap:12, fontSize:11, color:C.gray }}>
+                            <span>Calidad: <strong style={{ color:C.blue }}>↑ Encima</strong></span>
+                            <span>Conversión: <strong style={{ color:C.pink }}>↓ Abajo</strong></span>
+                            <span>CPL: ${Math.round(a.cpl).toLocaleString("es-CL")}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+                    <div style={{ background:C.white, borderRadius:14, padding:"20px 22px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", borderTop:`4px solid ${C.blue}` }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:C.blue, marginBottom:14 }}>🏆 Top 6 creativos</div>
+                      {[...ads].filter(a=>a.leads>=2).sort((a,b)=>a.cpl-b.cpl).slice(0,6).map((a,i)=>(
+                        <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10, paddingBottom:10, borderBottom:i<5?`1px solid ${C.lightGray}`:"none" }}>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontSize:11, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{a.nombre.slice(0,38)}</div>
+                            <div style={{ fontSize:10, color:C.gray }}>{a.leads} leads</div>
+                          </div>
+                          <div style={{ fontSize:14, fontWeight:700, color:C.blue, fontFamily:"monospace", marginLeft:8 }}>${Math.round(a.cpl).toLocaleString("es-CL")}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ background:C.white, borderRadius:14, padding:"20px 22px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", borderTop:`4px solid ${C.pink}` }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:C.pink, marginBottom:14 }}>⚠ Peores 6 creativos</div>
+                      {[...ads].filter(a=>a.leads>0).sort((a,b)=>b.cpl-a.cpl).slice(0,6).map((a,i)=>(
+                        <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10, paddingBottom:10, borderBottom:i<5?`1px solid ${C.lightGray}`:"none" }}>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontSize:11, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{a.nombre.slice(0,38)}</div>
+                            <div style={{ fontSize:10, color:C.gray }}>{a.leads} leads</div>
+                          </div>
+                          <div style={{ fontSize:14, fontWeight:700, color:C.pink, fontFamily:"monospace", marginLeft:8 }}>${Math.round(a.cpl).toLocaleString("es-CL")}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // ── MAIN APP ─────────────────────────────────────────────
     function App() {
       const [activeTab, setActiveTab] = useState("upload");
@@ -209,12 +615,6 @@
 
       // Active objective filter per tab
       const [objFilter, setObjFilter] = useState({ overview:"all", anuncios:"all", worst:"all", advplus:"all" });
-      const [apiKey, setApiKey] = useState(() => localStorage.getItem("mas_anthropic_key") || "");
-      const [apiKeySaved, setApiKeySaved] = useState(() => !!localStorage.getItem("mas_anthropic_key"));
-      const [chatMessages, setChatMessages] = useState([]);
-      const [chatInput, setChatInput] = useState("");
-      const [chatLoading, setChatLoading] = useState(false);
-      const chatEndRef = useRef(null);
 
       const handleFile = (key, parser) => (rows, status) => {
         setFileStatus(s=>({...s,[key]:status}));
@@ -499,7 +899,7 @@ ${ctx}`
         { id:"anuncios", label:"Creativos" },
         { id:"worst",    label:"Campañas críticas" },
         { id:"advplus",  label:"Adv+ vs Intereses" },
-        { id:"chat",     label:"✨ Preguntar a IA" },
+        { id:"chat",     label:"📈 Análisis" },
       ];
 
       return (
@@ -909,187 +1309,16 @@ ${ctx}`
             )}
 
 
-            {/* ── CHAT IA ── */}
+            {/* ── ANÁLISIS ── */}
             {activeTab==="chat" && (
-              <div style={{ maxWidth:760, margin:"0 auto" }}>
-                <div style={{ background:C.black, borderRadius:14, padding:"22px 26px", marginBottom:22, color:C.white }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
-                    <div style={{ display:"flex", gap:3 }}>{[C.pink,C.blue,C.orange].map((c,i)=><div key={i} style={{ width:8, height:8, borderRadius:"50%", background:c }} />)}</div>
-                    <div style={{ fontSize:10, color:"#555", fontWeight:700, letterSpacing:"0.15em", textTransform:"uppercase" }}>Análisis con IA · Claude</div>
-                  </div>
-                  <p style={{ margin:"0 0 6px", fontSize:16, fontWeight:700 }}>Pregúntale a la IA sobre tus campañas</p>
-                  <p style={{ margin:0, fontSize:13, color:"#aaa", lineHeight:1.6 }}>
-                    {rawData.campaigns.length > 0
-                      ? `Datos cargados: ${rawData.campaigns.length} campañas · ${rawData.adSets.length} conjuntos · ${rawData.ads.length} anuncios`
-                      : "Carga tus CSVs primero para obtener análisis sobre tus campañas."}
-                  </p>
-                </div>
-
-                {/* API Key */}
-                {!apiKeySaved ? (
-                  <div style={{ background:C.white, borderRadius:14, padding:"22px 24px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", marginBottom:20, borderLeft:`4px solid ${C.orange}` }}>
-                    <div style={{ fontSize:14, fontWeight:700, marginBottom:8 }}>🔑 Configura tu API Key de Anthropic</div>
-                    <p style={{ fontSize:12, color:C.gray, lineHeight:1.6, marginBottom:16 }}>
-                      Necesitas una API key para usar el chat con IA. Se guarda solo en tu navegador.
-                      Obtenla en <strong>console.anthropic.com</strong> → API Keys → Create Key.
-                    </p>
-                    <div style={{ display:"flex", gap:10 }}>
-                      <input
-                        type="password"
-                        value={apiKey}
-                        onChange={e=>setApiKey(e.target.value)}
-                        onKeyDown={e=>{ if(e.key==="Enter"){ saveApiKey(); }}}
-                        placeholder="sk-ant-..."
-                        style={{ flex:1, background:C.cream, border:`1.5px solid ${C.lightGray}`, borderRadius:8, padding:"11px 14px", fontSize:13, fontFamily:"monospace", outline:"none" }}
-                      />
-                      <button onClick={saveApiKey}
-                        style={{ background:C.black, color:C.white, border:"none", borderRadius:8, padding:"11px 22px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
-                        Guardar
-                      </button>
-                    </div>
-                  </div>
+              <div>
+                {rawData.campaigns.length === 0 ? (
+                  <EmptyState onUpload={()=>setActiveTab("upload")} />
                 ) : (
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.blue+"10", border:`1px solid ${C.blue}20`, borderRadius:10, padding:"10px 16px", marginBottom:16 }}>
-                    <span style={{ fontSize:12, color:C.blue, fontWeight:600 }}>🔑 API Key configurada ✓</span>
-                    <button onClick={()=>{ localStorage.removeItem("mas_anthropic_key"); setApiKey(""); setApiKeySaved(false); }}
-                      style={{ background:"transparent", border:"none", color:C.gray, fontSize:11, textDecoration:"underline", cursor:"pointer" }}>Cambiar</button>
-                  </div>
-                )}
-
-                {/* Suggested questions */}
-                {chatMessages.length === 0 && apiKeySaved && (
-                  <div style={{ marginBottom:20 }}>
-
-                    {/* Auto analysis button */}
-                    {rawData.campaigns.length > 0 && (
-                      <div style={{ marginBottom:20 }}>
-                        <button
-                          onClick={async ()=>{
-                            const autoQ = "Hazme un análisis completo y profundo de todas las campañas: identifica las 3 principales oportunidades de mejora con su impacto estimado en CLP, compara la eficiencia entre campañas (leads por cada 1.000 CLP), detecta dónde se está perdiendo presupuesto, y dame un plan de acción priorizado por impacto para esta semana.";
-                            const ctx2 = buildContext();
-                            const uMsg = { role:"user", content:autoQ };
-                            setChatMessages([uMsg]);
-                            setChatLoading(true);
-                            try {
-                              const sysP = ctx2 ? `Eres un analista senior de performance marketing especializado en Meta Ads para el sector educativo. Trabajas para MÁS Educación Continua UNIACC en Chile.
-
-TU ESTILO DE ANÁLISIS:
-- Vas directo al punto: primero el dato, luego el diagnóstico, luego la acción concreta
-- Usas comparativas siempre: "campaña X gasta 3x más que Y pero genera 2x menos leads"
-- Identificas patrones no obvios: concentración de presupuesto, eficiencia por peso gastado, relación alcance/CPL
-- Calculas oportunidades en CLP: "pausar X liberaría CLP Y que redirigido a Z generaría ~N leads adicionales"
-- Priorizas por impacto: qué cambio pequeño tiene el mayor retorno
-- Detectas anomalías: campañas con gasto alto y cero leads, frecuencias críticas, audiencias microscópicas
-- Usas la métrica leads por cada 1.000 CLP gastados para comparar eficiencia real entre campañas
-
-FORMATO DE RESPUESTA:
-- Para análisis complejos: usa secciones con emojis (📊 Situación actual, 🔍 Diagnóstico, ⚡ Acciones prioritarias, 💰 Oportunidad estimada)
-- Para preguntas simples: respuesta directa en 2-3 líneas
-- Siempre termina con UNA acción concreta que el usuario puede hacer hoy
-- Números siempre en formato chileno con puntos de miles
-
-${ctx2}` : "No hay datos.";
-                              const r = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2000,system:sysP,messages:[{role:"user",content:autoQ}]})});
-                              if(!r.ok){const e=await r.json().catch(()=>({}));setChatMessages(prev=>[...prev,{role:"assistant",content:`❌ Error: ${e?.error?.message||r.status}`}]);}
-                              else{const d=await r.json();setChatMessages(prev=>[...prev,{role:"assistant",content:d.content?.[0]?.text||"Sin respuesta"}]);}
-                            } catch(e){setChatMessages(prev=>[...prev,{role:"assistant",content:`❌ Error: ${e.message}`}]);}
-                            setChatLoading(false);
-                            setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
-                          }}
-                          style={{ width:"100%", background:`linear-gradient(135deg, ${C.black} 0%, #1a1a2e 100%)`, color:C.white, border:`2px solid ${C.pink}40`, borderRadius:12, padding:"16px 24px", fontSize:14, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10 }}>
-                          <span style={{ fontSize:20 }}>✨</span>
-                          <span>Análisis completo automático — oportunidades + plan de acción</span>
-                          <span style={{ fontSize:18 }}>→</span>
-                        </button>
-                        <div style={{ fontSize:11, color:C.gray, textAlign:"center", marginTop:6 }}>Analiza todas tus campañas y genera recomendaciones priorizadas por impacto</div>
-                      </div>
-                    )}
-
-                    <div style={{ fontSize:11, color:C.gray, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:12 }}>O pregunta algo específico</div>
-                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:8 }}>
-                      {[
-                        { q:"¿Dónde se está perdiendo más presupuesto?", icon:"💸" },
-                        { q:"Compara la eficiencia de todas las campañas en leads por cada 1.000 CLP", icon:"⚖️" },
-                        { q:"¿Qué campañas debería pausar hoy y cuánto liberaría?", icon:"⛔" },
-                        { q:"¿Dónde reasigno el presupuesto para maximizar leads?", icon:"🎯" },
-                        { q:"¿Qué anuncios tienen problema post-clic?", icon:"🔍" },
-                        { q:"¿Cuál es la campaña más eficiente y por qué?", icon:"🏆" },
-                        { q:"¿Qué campañas tienen frecuencia de saturación?", icon:"🔁" },
-                        { q:"Dame un diagnóstico de las audiencias pequeñas", icon:"👥" },
-                        { q:"¿Cuánto estoy pagando de más vs mi mejor campaña?", icon:"📊" },
-                        { q:"¿Qué patrón tienen mis mejores creativos?", icon:"🎨" },
-                      ].map((item,i) => (
-                        <button key={i} onClick={()=>setChatInput(item.q)}
-                          style={{ background:C.white, border:`1.5px solid ${C.lightGray}`, borderRadius:10, padding:"10px 14px", fontSize:12, color:C.darkGray, fontWeight:500, cursor:"pointer", textAlign:"left", display:"flex", gap:8, alignItems:"flex-start", lineHeight:1.4 }}>
-                          <span style={{ fontSize:14, flexShrink:0 }}>{item.icon}</span>
-                          <span>{item.q}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Messages */}
-                {chatMessages.length > 0 && (
-                  <div style={{ background:C.white, borderRadius:14, padding:"20px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", marginBottom:16, maxHeight:460, overflowY:"auto" }}>
-                    {chatMessages.map((msg,i) => (
-                      <div key={i} style={{ marginBottom:16, display:"flex", flexDirection:"column", alignItems:msg.role==="user"?"flex-end":"flex-start" }}>
-                        <div style={{ fontSize:9, color:C.gray, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:5 }}>
-                          {msg.role==="user" ? "Tú" : "✨ IA"}
-                        </div>
-                        <div style={{
-                          background: msg.role==="user" ? C.black : C.cream,
-                          color: msg.role==="user" ? C.white : C.darkGray,
-                          borderRadius: msg.role==="user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-                          padding:"12px 16px", fontSize:13, lineHeight:1.7,
-                          maxWidth:"85%", whiteSpace:"pre-wrap",
-                          borderLeft: msg.role==="assistant" ? `3px solid ${C.pink}` : "none",
-                        }}>
-                          {msg.content}
-                        </div>
-                      </div>
-                    ))}
-                    {chatLoading && (
-                      <div style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 0" }}>
-                        <div style={{ display:"flex", gap:4 }}>
-                          {[0,1,2].map(i=>(
-                            <div key={i} style={{ width:7, height:7, borderRadius:"50%", background:C.pink, opacity:0.6 }} />
-                          ))}
-                        </div>
-                        <span style={{ fontSize:12, color:C.gray }}>Analizando tus datos...</span>
-                      </div>
-                    )}
-                    <div ref={chatEndRef} />
-                  </div>
-                )}
-
-                {/* Input */}
-                {apiKeySaved && (
-                  <div>
-                    <div style={{ display:"flex", gap:10 }}>
-                      <input
-                        value={chatInput}
-                        onChange={e=>setChatInput(e.target.value)}
-                        onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendMessage(); }}}
-                        placeholder="Ej: ¿Cuál campaña tiene el mejor CPL?"
-                        style={{ flex:1, background:C.white, border:`1.5px solid ${C.lightGray}`, borderRadius:10, padding:"12px 16px", fontSize:13, color:C.black, outline:"none", fontFamily:"inherit" }}
-                      />
-                      <button onClick={sendMessage} disabled={!chatInput.trim()||chatLoading}
-                        style={{ background:!chatInput.trim()||chatLoading?C.lightGray:C.black, color:!chatInput.trim()||chatLoading?C.gray:C.white, border:"none", borderRadius:10, padding:"12px 22px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
-                        {chatLoading ? "..." : "Enviar →"}
-                      </button>
-                    </div>
-                    {chatMessages.length > 0 && (
-                      <button onClick={()=>setChatMessages([])} style={{ marginTop:10, background:"transparent", border:"none", color:C.gray, fontSize:12, textDecoration:"underline", cursor:"pointer" }}>
-                        Limpiar conversación
-                      </button>
-                    )}
-                  </div>
+                  <AnalisisEngine campaigns={rawData.campaigns} adSets={rawData.adSets} ads={rawData.ads} />
                 )}
               </div>
             )}
-
-          </div>
         </div>
       );
     }
