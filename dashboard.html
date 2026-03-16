@@ -201,6 +201,253 @@
     };
 
 
+
+    // ── RECOMENDACIONES ENGINE ───────────────────────────────
+    function RecomendacionesEngine({ campaigns, adSets, ads }) {
+
+      const totalGasto = campaigns.reduce((a,c)=>a+c.gasto,0);
+      const totalLeads = campaigns.reduce((a,c)=>a+c.leads,0);
+      const avgCPL = totalLeads>0 ? totalGasto/totalLeads : 0;
+      const campsWithLeads = campaigns.filter(c=>c.leads>0).sort((a,b)=>a.cpl-b.cpl);
+      const best = campsWithLeads[0];
+      const eff = c => c.gasto>0 ? (c.leads/(c.gasto/1000)) : 0;
+
+      // ── SCORING ENGINE: cada señal suma puntos de impacto ──
+      const signals = [];
+
+      // 1. Campañas críticas (CPL > 2x promedio) con gasto alto
+      const criticals = campsWithLeads.filter(c=>c.cpl>avgCPL*2).sort((a,b)=>b.gasto-a.gasto);
+      const wastedGasto = criticals.reduce((a,c)=>a+c.gasto,0);
+      const extraLeads = best ? Math.round(wastedGasto*0.6/best.cpl) : 0;
+      if(criticals.length>0) signals.push({
+        score: wastedGasto,
+        tipo: "presupuesto",
+        titulo: criticals.length===1
+          ? `Pausar o recortar 70% el presupuesto de "${criticals[0].nombre.slice(0,40)}"`
+          : `Recortar ${criticals.length} campañas con CPL crítico (>${Math.round(avgCPL*2).toLocaleString("es-CL")} CLP)`,
+        porque: `Estas campañas consumen CLP ${wastedGasto.toLocaleString("es-CL")} — el ${Math.round(wastedGasto/totalGasto*100)}% del presupuesto total — y generan solo el ${Math.round(criticals.reduce((a,c)=>a+c.leads,0)/totalLeads*100)}% de los leads. Su CPL promedio es ${Math.round(criticals.reduce((a,c)=>a+c.cpl,0)/criticals.length).toLocaleString("es-CL")} CLP, ${Math.round(criticals.reduce((a,c)=>a+c.cpl,0)/criticals.length/avgCPL)}x el promedio de la cuenta.`,
+        accion: `Recortar 60–70% el presupuesto de ${criticals.map(c=>c.nombre.slice(0,25)).join(", ")}. Redirigir a ${best?.nombre?.slice(0,30)||"la campaña más eficiente"}.`,
+        impacto: `~${extraLeads} leads adicionales sin aumentar el presupuesto total`,
+        impactoColor: C.blue,
+        campanas: criticals.slice(0,4).map(c=>({
+          nombre: c.nombre.slice(0,50),
+          stat: `CPL $${Math.round(c.cpl).toLocaleString("es-CL")} · gasto CLP ${c.gasto.toLocaleString("es-CL")}`,
+          bad: true,
+        })),
+        color: C.pink, icon:"⛔",
+      });
+
+      // 2. Campañas con 0 leads
+      const noLeads = campaigns.filter(c=>c.gasto>5000&&c.leads===0);
+      if(noLeads.length>0) signals.push({
+        score: noLeads.reduce((a,c)=>a+c.gasto,0)*1.5,
+        tipo:"presupuesto",
+        titulo:`Pausar ${noLeads.length} campaña${noLeads.length>1?"s":""} con gasto y cero resultados`,
+        porque:`${noLeads.length===1?`"${noLeads[0].nombre.slice(0,40)}" ha`:`Estas ${noLeads.length} campañas han`} gastado CLP ${noLeads.reduce((a,c)=>a+c.gasto,0).toLocaleString("es-CL")} sin generar ningún lead. El dinero se está quemando sin retorno posible en el estado actual.`,
+        accion:`Pausar inmediatamente: ${noLeads.map(c=>c.nombre.slice(0,30)).join(", ")}. Revisar configuración de píxel y evento de conversión antes de reactivar.`,
+        impacto:`Recupera CLP ${noLeads.reduce((a,c)=>a+c.gasto,0).toLocaleString("es-CL")} para reasignar`,
+        impactoColor: C.pink,
+        campanas: noLeads.slice(0,3).map(c=>({
+          nombre:c.nombre.slice(0,50),
+          stat:`CLP ${c.gasto.toLocaleString("es-CL")} gastados · 0 leads`,
+          bad:true,
+        })),
+        color:C.pink, icon:"🗑️",
+      });
+
+      // 3. Saturación (frecuencia alta)
+      const saturated = campaigns.filter(c=>c.frecuencia>4&&c.leads>0).sort((a,b)=>b.frecuencia-a.frecuencia);
+      if(saturated.length>0) signals.push({
+        score: saturated.reduce((a,c)=>a+c.gasto,0)*0.8,
+        tipo:"creativos",
+        titulo:`Renovar creativos en ${saturated.length===1?`"${saturated[0].nombre.slice(0,35)}"`:`${saturated.length} campañas con frecuencia de saturación`}`,
+        porque:`${saturated.length===1?"Esta campaña tiene":"Estas campañas tienen"} frecuencia ${saturated.map(c=>c.frecuencia.toFixed(1)+"x").join(", ")}. Cuando la frecuencia supera 4x, la audiencia ya vio el anuncio demasiadas veces y deja de responder — el CPL sube aunque el targeting sea correcto. El problema es el creativo, no la audiencia.`,
+        accion:`Crear 2–3 creativos nuevos con propuesta de valor distinta. Mantener la segmentación actual. Objetivo: bajar frecuencia <2.5x en 2 semanas.`,
+        impacto:`Puede reducir CPL entre 30–50% sin cambiar presupuesto ni audiencia`,
+        impactoColor: C.orange,
+        campanas: saturated.slice(0,3).map(c=>({
+          nombre:c.nombre.slice(0,50),
+          stat:`Frecuencia ${c.frecuencia.toFixed(1)}x · CPL $${Math.round(c.cpl).toLocaleString("es-CL")}`,
+          bad:true,
+        })),
+        color:C.orange, icon:"🎨",
+      });
+
+      // 4. Audiencias pequeñas
+      const smallAud = campaigns.filter(c=>c.alcance>0&&c.alcance<12000&&c.leads>0).sort((a,b)=>a.alcance-b.alcance);
+      if(smallAud.length>0) signals.push({
+        score: smallAud.reduce((a,c)=>a+c.gasto,0)*1.2,
+        tipo:"audiencia",
+        titulo:`Ampliar audiencia en ${smallAud.length===1?`"${smallAud[0].nombre.slice(0,35)}"`:`${smallAud.length} campañas con alcance microscópico`}`,
+        porque:`Advantage+ necesita al menos 50.000 personas para optimizar correctamente. Con audiencias de ${smallAud.map(c=>c.alcance.toLocaleString("es-CL")).join(", ")} personas, el algoritmo no tiene suficiente masa para aprender y encontrar los mejores perfiles. El CPL alto es consecuencia directa del tamaño, no del creativo.`,
+        accion:`Ampliar cobertura geográfica (agregar regiones), rango etario (25–55 años), y en Adv+ poner intereses como sugerencias —no restricciones— para darle libertad al algoritmo.`,
+        impacto:`Con audiencia >50k, el CPL puede bajar hasta 60%`,
+        impactoColor: C.orange,
+        campanas: smallAud.slice(0,3).map(c=>({
+          nombre:c.nombre.slice(0,50),
+          stat:`Alcance ${c.alcance.toLocaleString("es-CL")} personas · CPL $${Math.round(c.cpl).toLocaleString("es-CL")}`,
+          bad:true,
+        })),
+        color:C.orange, icon:"🗺️",
+      });
+
+      // 5. Funnel / post-click problem
+      const funnelIssues = ads.filter(a=>/encima|above/i.test(a.calidad)&&/abajo|below/i.test(a.conversion)&&a.leads>0);
+      if(funnelIssues.length>0) signals.push({
+        score: funnelIssues.reduce((a,x)=>a+x.gasto,0)*0.9,
+        tipo:"formulario",
+        titulo:`Simplificar formularios — ${funnelIssues.length} anuncio${funnelIssues.length>1?"s":""} pierden leads después del clic`,
+        porque:`Meta clasifica ${funnelIssues.length===1?"este anuncio":"estos anuncios"} con calidad encima del promedio, pero con conversión abajo del promedio. Eso significa que el creativo es bueno y genera interés, pero algo en el formulario hace que la gente abandone. El cuello de botella está después del clic, no antes.`,
+        accion:`Reducir el formulario a máximo 3 campos (nombre, email, teléfono). Eliminar campos opcionales. Agregar pantalla de confirmación con propuesta de valor clara. Testear landing externa vs. formulario nativo.`,
+        impacto:`Formularios simples pueden duplicar la tasa de conversión post-clic`,
+        impactoColor: C.blue,
+        campanas: funnelIssues.slice(0,3).map(a=>({
+          nombre:a.nombre.slice(0,50),
+          stat:`Calidad ↑ Encima · Conversión ↓ Abajo · CPL $${Math.round(a.cpl).toLocaleString("es-CL")}`,
+          bad:false,
+        })),
+        color:C.blue, icon:"📝",
+      });
+
+      // 6. Underinvested best campaigns
+      const underinvested = campsWithLeads
+        .filter(c=>c.cpl<avgCPL*0.6&&totalGasto>0&&c.gasto/totalGasto<0.1)
+        .sort((a,b)=>eff(b)-eff(a));
+      if(underinvested.length>0) signals.push({
+        score: underinvested.reduce((a,c)=>a+(avgCPL-c.cpl)*c.leads,0)*0.7,
+        tipo:"presupuesto",
+        titulo:`Escalar presupuesto en ${underinvested.length===1?`"${underinvested[0].nombre.slice(0,35)}"`:`${underinvested.length} campañas subfinanciadas con CPL óptimo`}`,
+        porque:`${underinvested.map(c=>c.nombre.slice(0,25)).join(", ")} tiene${underinvested.length>1?"n":""} CPL de $${underinvested.map(c=>Math.round(c.cpl).toLocaleString("es-CL")).join(", ")} — muy por debajo del promedio — pero solo recibe${underinvested.length>1?"n":""} el ${underinvested.map(c=>Math.round(c.gasto/totalGasto*100)).join(", ")}% del presupuesto. Es la campaña más eficiente y está subfinanciada.`,
+        accion:`Aumentar 30–50% el presupuesto diario. Duplicar gradualmente validando que el CPL se mantiene estable. No hacer cambios bruscos — subir máximo 20% cada 3 días para no reiniciar la fase de aprendizaje de Meta.`,
+        impacto:`Cada CLP adicional aquí genera ${underinvested[0]?eff(underinvested[0]).toFixed(2):"más"} leads por cada 1.000 CLP`,
+        impactoColor: C.blue,
+        campanas: underinvested.slice(0,2).map(c=>({
+          nombre:c.nombre.slice(0,50),
+          stat:`CPL $${Math.round(c.cpl).toLocaleString("es-CL")} · solo ${Math.round(c.gasto/totalGasto*100)}% del presupuesto`,
+          bad:false,
+        })),
+        color:C.blue, icon:"🚀",
+      });
+
+      // Sort by score descending, take top 5
+      const top5 = signals.sort((a,b)=>b.score-a.score).slice(0,5);
+
+      // If less than 5, fill with generic
+      const generics = [
+        {
+          titulo:"Activar regla automática de pausa por CPL",
+          porque:"Sin reglas automáticas, una campaña puede disparar el CPL durante el fin de semana o fuera de horario sin que nadie lo note hasta el lunes. Meta permite crear reglas que pausan o notifican automáticamente.",
+          accion:"En Ads Manager → Reglas automáticas → Crear regla: si CPL > [2x tu promedio] por 2 días consecutivos → pausar campaña y notificar por email.",
+          impacto:"Evita que el presupuesto se queme en períodos de bajo rendimiento",
+          impactoColor:C.orange, color:C.orange, icon:"🤖", campanas:[], tipo:"optimización",
+        },
+        {
+          titulo:"Crear audiencias lookalike de tus mejores leads",
+          porque:"Si tienes una base de leads pasados, Meta puede encontrar perfiles similares en toda la plataforma. Las audiencias lookalike del 1–3% son consistentemente más eficientes que los intereses estándar.",
+          accion:"Subir una lista de leads históricos (mínimo 100, idealmente 500+) a Meta → Audiencias → Crear lookalike al 1%, 2% y 3% → Testear en conjuntos separados.",
+          impacto:"Las lookalike suelen tener CPL 20–40% menor que audiencias de intereses",
+          impactoColor:C.blue, color:C.blue, icon:"👥", campanas:[], tipo:"audiencia",
+        },
+        {
+          titulo:"Implementar test A/B de creativos en tu mejor campaña",
+          porque:"Sin datos de qué variante funciona mejor, estás tomando decisiones a ciegas. Un A/B sistemático te dice exactamente qué elemento del anuncio genera más conversiones.",
+          accion:"En tu campaña con mejor CPL, duplicar el conjunto de anuncios y cambiar solo una variable (imagen, titular o CTA). Dejar correr mínimo 7 días con presupuesto igual. Pausar el perdedor.",
+          impacto:"Los mejores creativos suelen tener 2–3x el rendimiento del promedio",
+          impactoColor:C.blue, color:C.blue, icon:"🧪", campanas:[], tipo:"creativos",
+        },
+      ];
+
+      while(top5.length < 5) top5.push(generics[top5.length-signals.length]||generics[0]);
+
+      const tipoColors = { presupuesto:C.pink, creativos:C.orange, audiencia:C.orange, formulario:C.blue, optimización:C.orange };
+
+      return (
+        <div>
+          {/* Header */}
+          <div style={{ background:C.black, borderRadius:14, padding:"24px 28px", marginBottom:28, color:C.white }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+              <div style={{ display:"flex", gap:4 }}>{[C.pink,C.blue,C.orange].map((c,i)=><div key={i} style={{ width:9, height:9, borderRadius:"50%", background:c }} />)}</div>
+              <div style={{ fontSize:10, color:"#555", fontWeight:700, letterSpacing:"0.15em", textTransform:"uppercase" }}>Prioridades detectadas automáticamente con tus datos</div>
+            </div>
+            <p style={{ margin:"0 0 6px", fontSize:17, fontWeight:700 }}>Las 5 acciones de mayor impacto para mejorar tus campañas</p>
+            <p style={{ margin:0, fontSize:13, color:"#aaa", lineHeight:1.7 }}>Ordenadas por impacto económico estimado. Hacer las primeras 2 esta semana puede cambiar significativamente los resultados.</p>
+          </div>
+
+          {/* The 5 */}
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+            {top5.map((rec,i)=>(
+              <div key={i} style={{ background:C.white, borderRadius:16, overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,.07)", border:`1px solid ${C.lightGray}` }}>
+                {/* Number + header */}
+                <div style={{ display:"flex", alignItems:"stretch" }}>
+                  {/* Big number */}
+                  <div style={{ background:i<2?rec.color:C.cream, width:64, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <span style={{ fontSize:28, fontWeight:700, color:i<2?C.white:C.lightGray }}>{i+1}</span>
+                  </div>
+                  {/* Title area */}
+                  <div style={{ flex:1, padding:"18px 22px", borderBottom:`1px solid ${C.lightGray}` }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+                      <span style={{ fontSize:20 }}>{rec.icon}</span>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:15, fontWeight:700, color:C.black, lineHeight:1.4 }}>{rec.titulo}</div>
+                        <div style={{ display:"flex", gap:8, marginTop:6, flexWrap:"wrap" }}>
+                          {i<2 && <span style={{ background:rec.color+"18", color:rec.color, fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:100, letterSpacing:"0.08em" }}>PRIORIDAD ALTA</span>}
+                          {i>=2 && <span style={{ background:"#f0f0f0", color:C.gray, fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:100 }}>ESTA SEMANA</span>}
+                          <span style={{ background:(tipoColors[rec.tipo]||C.blue)+"15", color:tipoColors[rec.tipo]||C.blue, fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:100, textTransform:"uppercase" }}>{rec.tipo}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ padding:"20px 22px 22px 22px" }}>
+                  {/* Porque */}
+                  <div style={{ marginBottom:16 }}>
+                    <div style={{ fontSize:10, color:C.gray, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:7 }}>¿Por qué es urgente?</div>
+                    <p style={{ margin:0, fontSize:13, color:C.darkGray, lineHeight:1.7 }}>{rec.porque}</p>
+                  </div>
+
+                  {/* Affected campaigns */}
+                  {rec.campanas&&rec.campanas.length>0 && (
+                    <div style={{ marginBottom:16 }}>
+                      <div style={{ fontSize:10, color:C.gray, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:7 }}>Campañas / Anuncios afectados</div>
+                      <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                        {rec.campanas.map((camp,j)=>(
+                          <div key={j} style={{ background:C.cream, borderRadius:8, padding:"9px 12px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:8 }}>
+                            <span style={{ fontSize:12, fontWeight:600, color:C.black }}>{camp.nombre}</span>
+                            <span style={{ fontSize:11, color:camp.bad?C.pink:C.blue, fontFamily:"monospace", fontWeight:600 }}>{camp.stat}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Accion */}
+                  <div style={{ background:rec.color+"08", border:`1px solid ${rec.color}25`, borderLeft:`4px solid ${rec.color}`, borderRadius:10, padding:"14px 16px", marginBottom:14 }}>
+                    <div style={{ fontSize:10, color:rec.color, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:6 }}>⚡ Acción concreta</div>
+                    <p style={{ margin:0, fontSize:13, color:C.darkGray, lineHeight:1.7 }}>{rec.accion}</p>
+                  </div>
+
+                  {/* Impact */}
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <div style={{ width:8, height:8, borderRadius:"50%", background:rec.impactoColor, flexShrink:0 }} />
+                    <span style={{ fontSize:12, color:rec.impactoColor, fontWeight:700 }}>{rec.impacto}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer note */}
+          <div style={{ background:C.blue+"10", border:`1.5px solid ${C.blue}25`, borderLeft:`4px solid ${C.blue}`, borderRadius:12, padding:"16px 20px", marginTop:24 }}>
+            <div style={{ fontSize:11, color:C.blue, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:6 }}>💡 Cómo usar estas recomendaciones</div>
+            <p style={{ margin:0, fontSize:13, color:C.darkGray, lineHeight:1.7 }}>
+              Las recomendaciones 1 y 2 son las de mayor retorno inmediato — implementarlas esta semana. Las siguientes 3 pueden hacerse en paralelo o en los próximos 7–14 días. Cada vez que cargues datos nuevos, la lista se recalcula automáticamente con tus números actualizados.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     // ── ANÁLISIS ENGINE ──────────────────────────────────────
     function AnalisisEngine({ campaigns, adSets, ads }) {
       const [activeSection, setActiveSection] = useState("resumen");
@@ -900,6 +1147,7 @@ ${ctx}`
         { id:"worst",    label:"Campañas críticas" },
         { id:"advplus",  label:"Adv+ vs Intereses" },
         { id:"chat",     label:"📈 Análisis" },
+        { id:"recomendaciones", label:"⚡ 5 Recomendaciones" },
       ];
 
       return (
@@ -1319,6 +1567,15 @@ ${ctx}`
                 )}
               </div>
             )}
+            {/* ── 5 RECOMENDACIONES ── */}
+            {activeTab==="recomendaciones" && (
+              <div>
+                {rawData.campaigns.length===0 ? <EmptyState onUpload={()=>setActiveTab("upload")} /> : (
+                  <RecomendacionesEngine campaigns={rawData.campaigns} adSets={rawData.adSets} ads={rawData.ads} />
+                )}
+              </div>
+            )}
+
         </div>
       );
     }
