@@ -21,6 +21,7 @@
     ::-webkit-scrollbar { width:4px; height:4px; }
     ::-webkit-scrollbar-track { background:#f0f0f0; }
     ::-webkit-scrollbar-thumb { background:#ccc; border-radius:2px; }
+    @keyframes pulse { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1)} }
   </style>
 </head>
 <body>
@@ -208,6 +209,10 @@
 
       // Active objective filter per tab
       const [objFilter, setObjFilter] = useState({ overview:"all", anuncios:"all", worst:"all", advplus:"all" });
+      const [chatMessages, setChatMessages] = useState([]);
+      const [chatInput, setChatInput] = useState("");
+      const [chatLoading, setChatLoading] = useState(false);
+      const chatEndRef = useRef(null);
 
       const handleFile = (key, parser) => (rows, status) => {
         setFileStatus(s=>({...s,[key]:status}));
@@ -257,12 +262,73 @@
 
       const allLoaded = fileStatus.camps==="ok"||fileStatus.adsets==="ok"||fileStatus.ads==="ok";
 
+      // Build data context for Claude
+      const buildContext = () => {
+        const camps = rawData.campaigns;
+        const sets = rawData.adSets;
+        const adsList = rawData.ads;
+        if (camps.length === 0 && sets.length === 0 && adsList.length === 0) return null;
+        let ctx = "Datos de campañas Meta Ads de MÁS Educación Continua UNIACC:\n\n";
+        if (camps.length > 0) {
+          ctx += "CAMPAÑAS:\n";
+          camps.forEach(c => {
+            ctx += `- ${c.nombre}: ${c.leads} leads, CPL $${Math.round(c.cpl).toLocaleString("es-CL")}, gasto CLP ${c.gasto.toLocaleString("es-CL")}, alcance ${c.alcance.toLocaleString("es-CL")}, frecuencia ${c.frecuencia.toFixed(1)}x, objetivo: ${c.objetivo}\n`;
+          });
+        }
+        if (sets.length > 0) {
+          ctx += "\nCONJUNTOS DE ANUNCIOS:\n";
+          sets.slice(0,30).forEach(s => {
+            ctx += `- ${s.nombre}: ${s.leads} resultados, CPL $${Math.round(s.cpl).toLocaleString("es-CL")}, gasto CLP ${s.gasto.toLocaleString("es-CL")}, alcance ${s.alcance.toLocaleString("es-CL")}\n`;
+          });
+        }
+        if (adsList.length > 0) {
+          ctx += "\nANUNCIOS (top 30 por gasto):\n";
+          [...adsList].sort((a,b)=>b.gasto-a.gasto).slice(0,30).forEach(a => {
+            ctx += `- ${a.nombre}: ${a.leads} leads, CPL $${Math.round(a.cpl).toLocaleString("es-CL")}, gasto CLP ${a.gasto.toLocaleString("es-CL")}, calidad: ${a.calidad}, conversión: ${a.conversion}\n`;
+          });
+        }
+        return ctx;
+      };
+
+      const sendMessage = async () => {
+        const q = chatInput.trim();
+        if (!q || chatLoading) return;
+        const ctx = buildContext();
+        const userMsg = { role:"user", content:q };
+        setChatMessages(prev => [...prev, userMsg]);
+        setChatInput("");
+        setChatLoading(true);
+        try {
+          const systemPrompt = ctx
+            ? `Eres un analista de marketing digital especializado en Meta Ads. Analiza los datos proporcionados y responde preguntas de forma clara, concisa y accionable. Usa pesos chilenos (CLP) y el contexto de MÁS Educación Continua UNIACC. Responde siempre en español. Cuando identifiques problemas, sugiere acciones concretas.\n\n${ctx}`
+            : "Eres un analista de Meta Ads experto. No hay datos cargados aún — indica al usuario que cargue sus CSVs primero. Responde en español.";
+          const res = await fetch("https://api.anthropic.com/v1/messages", {
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify({
+              model:"claude-sonnet-4-20250514",
+              max_tokens:1000,
+              system: systemPrompt,
+              messages:[...chatMessages, userMsg].map(m=>({ role:m.role, content:m.content })),
+            }),
+          });
+          const data = await res.json();
+          const reply = data.content?.[0]?.text || "No pude procesar la respuesta.";
+          setChatMessages(prev => [...prev, { role:"assistant", content:reply }]);
+        } catch(e) {
+          setChatMessages(prev => [...prev, { role:"assistant", content:"Error al conectar con la IA. Intenta de nuevo." }]);
+        }
+        setChatLoading(false);
+        setTimeout(()=>chatEndRef.current?.scrollIntoView({ behavior:"smooth" }), 100);
+      };
+
       const tabs = [
         { id:"upload",   label:"📂 Importar" },
         { id:"overview", label:"Panorama" },
         { id:"anuncios", label:"Creativos" },
         { id:"worst",    label:"Campañas críticas" },
         { id:"advplus",  label:"Adv+ vs Intereses" },
+        { id:"chat",     label:"✨ Preguntar a IA" },
       ];
 
       return (
