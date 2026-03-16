@@ -292,6 +292,16 @@
         return ctx;
       };
 
+      const saveApiKey = () => {
+        const k = apiKey.trim();
+        if (k.startsWith("sk-")) {
+          localStorage.setItem("mas_anthropic_key", k);
+          setApiKeySaved(true);
+        } else {
+          alert("La key debe comenzar con sk-ant- o sk-");
+        }
+      };
+
       const sendMessage = async () => {
         const q = chatInput.trim();
         if (!q || chatLoading) return;
@@ -737,6 +747,138 @@
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+
+            {/* ── CHAT IA ── */}
+            {activeTab==="chat" && (
+              <div style={{ maxWidth:760, margin:"0 auto" }}>
+                <div style={{ background:C.black, borderRadius:14, padding:"22px 26px", marginBottom:22, color:C.white }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                    <div style={{ display:"flex", gap:3 }}>{[C.pink,C.blue,C.orange].map((c,i)=><div key={i} style={{ width:8, height:8, borderRadius:"50%", background:c }} />)}</div>
+                    <div style={{ fontSize:10, color:"#555", fontWeight:700, letterSpacing:"0.15em", textTransform:"uppercase" }}>Análisis con IA · Claude</div>
+                  </div>
+                  <p style={{ margin:"0 0 6px", fontSize:16, fontWeight:700 }}>Pregúntale a la IA sobre tus campañas</p>
+                  <p style={{ margin:0, fontSize:13, color:"#aaa", lineHeight:1.6 }}>
+                    {rawData.campaigns.length > 0
+                      ? `Datos cargados: ${rawData.campaigns.length} campañas · ${rawData.adSets.length} conjuntos · ${rawData.ads.length} anuncios`
+                      : "Carga tus CSVs primero para obtener análisis sobre tus campañas."}
+                  </p>
+                </div>
+
+                {/* API Key */}
+                {!apiKeySaved ? (
+                  <div style={{ background:C.white, borderRadius:14, padding:"22px 24px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", marginBottom:20, borderLeft:`4px solid ${C.orange}` }}>
+                    <div style={{ fontSize:14, fontWeight:700, marginBottom:8 }}>🔑 Configura tu API Key de Anthropic</div>
+                    <p style={{ fontSize:12, color:C.gray, lineHeight:1.6, marginBottom:16 }}>
+                      Necesitas una API key para usar el chat con IA. Se guarda solo en tu navegador.
+                      Obtenla en <strong>console.anthropic.com</strong> → API Keys → Create Key.
+                    </p>
+                    <div style={{ display:"flex", gap:10 }}>
+                      <input
+                        type="password"
+                        value={apiKey}
+                        onChange={e=>setApiKey(e.target.value)}
+                        onKeyDown={e=>{ if(e.key==="Enter"){ saveApiKey(); }}}
+                        placeholder="sk-ant-..."
+                        style={{ flex:1, background:C.cream, border:`1.5px solid ${C.lightGray}`, borderRadius:8, padding:"11px 14px", fontSize:13, fontFamily:"monospace", outline:"none" }}
+                      />
+                      <button onClick={saveApiKey}
+                        style={{ background:C.black, color:C.white, border:"none", borderRadius:8, padding:"11px 22px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+                        Guardar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.blue+"10", border:`1px solid ${C.blue}20`, borderRadius:10, padding:"10px 16px", marginBottom:16 }}>
+                    <span style={{ fontSize:12, color:C.blue, fontWeight:600 }}>🔑 API Key configurada ✓</span>
+                    <button onClick={()=>{ localStorage.removeItem("mas_anthropic_key"); setApiKey(""); setApiKeySaved(false); }}
+                      style={{ background:"transparent", border:"none", color:C.gray, fontSize:11, textDecoration:"underline", cursor:"pointer" }}>Cambiar</button>
+                  </div>
+                )}
+
+                {/* Suggested questions */}
+                {chatMessages.length === 0 && apiKeySaved && (
+                  <div style={{ marginBottom:20 }}>
+                    <div style={{ fontSize:11, color:C.gray, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:12 }}>Preguntas sugeridas</div>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                      {[
+                        "¿Cuál es la campaña que más ha gastado?",
+                        "¿Cuál campaña tiene mejor CPL?",
+                        "¿Qué campañas debería pausar?",
+                        "¿Dónde reasignar el presupuesto?",
+                        "¿Qué anuncio tiene mejor rendimiento?",
+                        "¿Qué campaña tiene la frecuencia más alta?",
+                        "Dame un resumen ejecutivo",
+                        "¿Qué conjuntos tienen audiencia pequeña?",
+                      ].map((q,i) => (
+                        <button key={i} onClick={()=>setChatInput(q)}
+                          style={{ background:C.white, border:`1.5px solid ${C.lightGray}`, borderRadius:100, padding:"8px 16px", fontSize:12, color:C.darkGray, fontWeight:500, cursor:"pointer" }}>
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Messages */}
+                {chatMessages.length > 0 && (
+                  <div style={{ background:C.white, borderRadius:14, padding:"20px", boxShadow:"0 1px 4px rgba(0,0,0,.06)", marginBottom:16, maxHeight:460, overflowY:"auto" }}>
+                    {chatMessages.map((msg,i) => (
+                      <div key={i} style={{ marginBottom:16, display:"flex", flexDirection:"column", alignItems:msg.role==="user"?"flex-end":"flex-start" }}>
+                        <div style={{ fontSize:9, color:C.gray, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:5 }}>
+                          {msg.role==="user" ? "Tú" : "✨ IA"}
+                        </div>
+                        <div style={{
+                          background: msg.role==="user" ? C.black : C.cream,
+                          color: msg.role==="user" ? C.white : C.darkGray,
+                          borderRadius: msg.role==="user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                          padding:"12px 16px", fontSize:13, lineHeight:1.7,
+                          maxWidth:"85%", whiteSpace:"pre-wrap",
+                          borderLeft: msg.role==="assistant" ? `3px solid ${C.pink}` : "none",
+                        }}>
+                          {msg.content}
+                        </div>
+                      </div>
+                    ))}
+                    {chatLoading && (
+                      <div style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 0" }}>
+                        <div style={{ display:"flex", gap:4 }}>
+                          {[0,1,2].map(i=>(
+                            <div key={i} style={{ width:7, height:7, borderRadius:"50%", background:C.pink, opacity:0.6 }} />
+                          ))}
+                        </div>
+                        <span style={{ fontSize:12, color:C.gray }}>Analizando tus datos...</span>
+                      </div>
+                    )}
+                    <div ref={chatEndRef} />
+                  </div>
+                )}
+
+                {/* Input */}
+                {apiKeySaved && (
+                  <div>
+                    <div style={{ display:"flex", gap:10 }}>
+                      <input
+                        value={chatInput}
+                        onChange={e=>setChatInput(e.target.value)}
+                        onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendMessage(); }}}
+                        placeholder="Ej: ¿Cuál campaña tiene el mejor CPL?"
+                        style={{ flex:1, background:C.white, border:`1.5px solid ${C.lightGray}`, borderRadius:10, padding:"12px 16px", fontSize:13, color:C.black, outline:"none", fontFamily:"inherit" }}
+                      />
+                      <button onClick={sendMessage} disabled={!chatInput.trim()||chatLoading}
+                        style={{ background:!chatInput.trim()||chatLoading?C.lightGray:C.black, color:!chatInput.trim()||chatLoading?C.gray:C.white, border:"none", borderRadius:10, padding:"12px 22px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+                        {chatLoading ? "..." : "Enviar →"}
+                      </button>
+                    </div>
+                    {chatMessages.length > 0 && (
+                      <button onClick={()=>setChatMessages([])} style={{ marginTop:10, background:"transparent", border:"none", color:C.gray, fontSize:12, textDecoration:"underline", cursor:"pointer" }}>
+                        Limpiar conversación
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
