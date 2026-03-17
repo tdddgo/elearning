@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>MÁS · Meta Ads Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#f7f5f0;font-family:"Montserrat",sans-serif}
+    button{font-family:inherit;cursor:pointer}
+    .dz{border:2px dashed #e8e8e8;border-radius:14px;padding:24px 14px;text-align:center;transition:all .2s;background:#fff;cursor:pointer}
+    .dz.drag{border-color:#29ABE2;background:#29ABE210}
+    .dz.done{border-color:#29ABE2;border-style:solid}
+    .dz.err{border-color:#E91E8C}
+    input[type=file]{display:none}
+    ::-webkit-scrollbar{width:4px;height:4px}
+    ::-webkit-scrollbar-thumb{background:#ccc;border-radius:2px}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useRef,useMemo} = React;
+const LOGO = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAQHB9ADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAj/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AIyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//Z";
+const C = {bk:"#0a0a0a",wh:"#fff",cr:"#f7f5f0",pk:"#E91E8C",bl:"#29ABE2",or:"#F7941D",gy:"#888",lg:"#e8e8e8",dk:"#333"};
+
+function parseCSV(text) {
+  const lines = text.split(/
+?
+/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const hdrs = lines[0].split(",").map(h => h.replace(/^"|"$/g,"").trim());
+  return lines.slice(1).map(line => {
+    const vals = []; let cur = "", inQ = false;
+    for (let c of line) {
+      if (c === '"') inQ = !inQ;
+      else if (c === ',' && !inQ) { vals.push(cur); cur = ""; }
+      else cur += c;
+    }
+    vals.push(cur);
+    const obj = {}; hdrs.forEach((h,i) => { obj[h] = (vals[i]||"").trim(); }); return obj;
+  });
+}
+
+function detectObj(r) {
+  const ind = (r["Indicador de resultado"]||"").toLowerCase();
+  const nm = (r["Nombre de la campaña"]||r["Nombre del conjunto de anuncios"]||r["Nombre del anuncio"]||"").toLowerCase();
+  if (/leadgen|lead/.test(ind)) return "leads";
+  if (/landing|visit|destino/.test(ind)) return "visitas";
+  if (/click|clic/.test(ind)) return "clics";
+  if (/conv/.test(nm)) return "leads";
+  return "otro";
+}
+
+function parseCamps(rows) {
+  return rows.filter(r=>r["Nombre de la campaña"])
+    .map(r=>({nombre:r["Nombre de la campaña"],leads:+r["Resultados"]||0,cpl:+r["Costo por resultados"]||0,
+      gasto:+r["Importe gastado (CLP)"]||0,alcance:+r["Alcance"]||0,frecuencia:+r["Frecuencia"]||0,objetivo:detectObj(r)}))
+    .filter(r=>r.gasto>0).sort((a,b)=>b.cpl-a.cpl);
+}
+function parseSets(rows) {
+  return rows.filter(r=>r["Nombre del conjunto de anuncios"])
+    .map(r=>({nombre:r["Nombre del conjunto de anuncios"],leads:+r["Resultados"]||0,cpl:+r["Costo por resultados"]||0,
+      gasto:+r["Importe gastado (CLP)"]||0,alcance:+r["Alcance"]||0,frecuencia:+r["Frecuencia"]||0,objetivo:detectObj(r)}))
+    .filter(r=>r.gasto>0);
+}
+function parseAds(rows) {
+  return rows.filter(r=>r["Nombre del anuncio"])
+    .map(r=>({nombre:r["Nombre del anuncio"],leads:+r["Resultados"]||0,cpl:+r["Costo por resultados"]||0,
+      gasto:+r["Importe gastado (CLP)"]||0,alcance:+r["Alcance"]||0,
+      conjunto:r["Nombre del conjunto de anuncios"]||"",
+      calidad:r["Clasificación de calidad"]||"-",conversion:r["Clasificación del porcentaje de conversiones"]||"-",
+      objetivo:detectObj(r)}))
+    .filter(r=>r.gasto>0);
+}
+
+const fmt = n => Math.round(n).toLocaleString("es-CL");
+const fmtM = n => (n/1000000).toFixed(2)+"M";
+const eff = c => c.gasto>0 ? c.leads/(c.gasto/1000) : 0;
+const OBJ = {
+  leads:{icon:"📋",label:"Formularios/Leads",color:C.pk},
+  visitas:{icon:"🌐",label:"Visitas a página",color:C.bl},
+  clics:{icon:"🖱",label:"Clics en enlace",color:C.or},
+  otro:{icon:"📌",label:"Otro objetivo",color:C.gy},
+};
+
+const Pill = ({children,color}) => (
+  <span style={{background:color+"18",color,fontSize:9,fontWeight:700,letterSpacing:"0.1em",padding:"3px 9px",borderRadius:100,textTransform:"uppercase"}}>{children}</span>
+);
+const SBadge = ({val}) => {
+  if (!val||val==="-") return <span style={{color:"#ccc",fontSize:11}}>—</span>;
+  const up=/encima|above/i.test(val), dn=/abajo|below/i.test(val);
+  const col=up?C.bl:dn?C.pk:C.or;
+  return <span style={{background:col+"18",color:col,fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:100,fontFamily:"monospace"}}>{up?"↑":dn?"↓":"→"} {up?"Encima":dn?(val.includes("35")?"-35%":"-20%"):"Promedio"}</span>;
+};
+const EmptyState = ({onGo,msg}) => (
+  <div style={{background:C.wh,borderRadius:14,padding:"48px 32px",textAlign:"center",boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+    <div style={{fontSize:32,marginBottom:12}}>📂</div>
+    <div style={{fontSize:16,fontWeight:700,marginBottom:8}}>Sin datos cargados</div>
+    <div style={{fontSize:13,color:C.gy,marginBottom:20}}>{msg||"Importa tus reportes de Meta Ads."}</div>
+    <button onClick={onGo} style={{background:C.bk,color:C.wh,border:"none",borderRadius:8,padding:"10px 22px",fontSize:13,fontWeight:700}}>Ir a Importar →</button>
+  </div>
+);
+const StatCard = ({label,value,sub,accent}) => (
+  <div style={{background:C.wh,borderRadius:12,padding:"15px 13px",borderTop:"4px solid "+(accent||C.bk),boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+    <div style={{fontSize:9,color:C.gy,letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700,marginBottom:6}}>{label}</div>
+    <div style={{fontSize:19,fontWeight:700,color:(accent&&accent!==C.bk)?accent:C.bk}}>{value}</div>
+    {sub&&<div style={{fontSize:9,color:C.gy,marginTop:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{sub}</div>}
+  </div>
+);
+
+function UploadZone({label,icon,desc,status,onFile}) {
+  const [drag,setDrag]=useState(false); const ref=useRef();
+  const cls=status==="ok"?"done":status==="err"?"err":drag?"drag":"";
+  const handle = file => {
+    if (!file||!file.name.endsWith(".csv")) {onFile(null,"err"); return;}
+    const reader=new FileReader();
+    reader.onload=e=>{try{onFile(parseCSV(e.target.result),"ok")}catch{onFile(null,"err")}};
+    reader.onerror=()=>onFile(null,"err"); reader.readAsText(file);
+  };
+  return (
+    <div className={"dz "+cls} onDragOver={e=>{e.preventDefault();setDrag(true)}} onDragLeave={()=>setDrag(false)}
+      onDrop={e=>{e.preventDefault();setDrag(false);handle(e.dataTransfer.files[0])}} onClick={()=>ref.current.click()}>
+      <input ref={ref} type="file" accept=".csv" onChange={e=>handle(e.target.files[0])}/>
+      <div style={{fontSize:22,marginBottom:6}}>{status==="ok"?"✅":status==="err"?"❌":icon}</div>
+      <div style={{fontSize:12,fontWeight:700,color:status==="ok"?C.bl:C.bk,marginBottom:3}}>{label}</div>
+      <div style={{fontSize:11,color:C.gy,lineHeight:1.4}}>{status==="ok"?"Cargado · clic para reemplazar":desc}</div>
+    </div>
+  );
+}
+
+function ObjFilter({objs,active,onChange}) {
+  if (objs.length<=1) return null;
+  return (
+    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:18}}>
+      <button onClick={()=>onChange("all")} style={{background:active==="all"?C.bk:"transparent",color:active==="all"?C.wh:C.gy,border:"1.5px solid "+(active==="all"?C.bk:C.lg),borderRadius:100,padding:"6px 14px",fontSize:12,fontWeight:600}}>Todos</button>
+      {objs.map(o=>{const m=OBJ[o]||OBJ.otro;const act=active===o;return(
+        <button key={o} onClick={()=>onChange(o)} style={{background:act?m.color:"transparent",color:act?C.wh:C.gy,border:"1.5px solid "+(act?m.color:C.lg),borderRadius:100,padding:"6px 14px",fontSize:12,fontWeight:600,display:"flex",alignItems:"center",gap:5}}>
+          <span style={{fontSize:13}}>{m.icon}</span>{m.label}
+        </button>);}
+      )}
+    </div>
+  );
+}
+
+function BarChart({data,valueKey,labelKey,height}) {
+  const max = Math.max(...data.map(d=>d[valueKey]),1);
+  const h = height||160;
+  return (
+    <div style={{display:"flex",alignItems:"flex-end",gap:5,height:h,padding:"0 2px"}}>
+      {data.map((d,i)=>{
+        const pct=(d[valueKey]/max)*100;
+        const col=d[valueKey]===max?C.pk:d[valueKey]<max*0.4?C.bl:C.or;
+        return (
+          <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",gap:3}}>
+            <div style={{fontSize:8,color:col,fontWeight:700,fontFamily:"monospace",textAlign:"center"}}>{"$"+fmt(d[valueKey])}</div>
+            <div style={{width:"100%",background:col,borderRadius:"3px 3px 0 0",height:pct+"%",minHeight:2}}/>
+            <div style={{fontSize:8,color:C.gy,textAlign:"center",lineHeight:1.2,wordBreak:"break-word",maxWidth:45}}>{(""+d[labelKey]).slice(0,16)}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── ANÁLISIS ENGINE ─────────────────────────────────────────
+function AnalisisTab({campaigns,adSets,ads}) {
+  const [sec,setSec]=useState("resumen");
+  const [objF,setObjF]=useState("all");
+  const camps = objF==="all"?campaigns:campaigns.filter(c=>c.objetivo===objF);
+  const objs = useMemo(()=>[...new Set(campaigns.map(c=>c.objetivo))],[campaigns]);
+  const tG=camps.reduce((a,c)=>a+c.gasto,0);
+  const tL=camps.reduce((a,c)=>a+c.leads,0);
+  const avg=tL>0?tG/tL:0;
+  const cwl=camps.filter(c=>c.leads>0).sort((a,b)=>a.cpl-b.cpl);
+  const best=cwl[0], worst=cwl[cwl.length-1];
+  const criticals=cwl.filter(c=>c.cpl>avg*2);
+  const noLeads=camps.filter(c=>c.gasto>5000&&c.leads===0);
+  const saturated=camps.filter(c=>c.frecuencia>4&&c.leads>0);
+  const smallAud=camps.filter(c=>c.alcance>0&&c.alcance<12000&&c.leads>0);
+  const funnelAds=ads.filter(a=>/encima|above/i.test(a.calidad)&&/abajo|below/i.test(a.conversion)&&a.leads>0);
+  const topAds=[...ads].filter(a=>a.leads>=2).sort((a,b)=>a.cpl-b.cpl).slice(0,8);
+  const worstAds=[...ads].filter(a=>a.leads>0).sort((a,b)=>b.cpl-a.cpl).slice(0,6);
+  const setsWL=[...adSets].filter(a=>a.leads>0).sort((a,b)=>b.alcance-a.alcance).slice(0,12);
+  const avgSetCPL=setsWL.length?setsWL.reduce((a,s)=>a+s.cpl,0)/setsWL.length:0;
+  const effRank=[...cwl].sort((a,b)=>eff(b)-eff(a));
+  const maxEff=effRank.length?eff(effRank[0]):1;
+
+  const Alert=({type,icon,msg})=>{
+    const col=type==="alert"?C.pk:type==="warn"?C.or:C.bl;
+    return(<div style={{background:col+"10",borderLeft:"4px solid "+col,borderRadius:10,padding:"11px 14px",display:"flex",gap:10,marginBottom:9}}>
+      <span style={{fontSize:14,flexShrink:0}}>{icon}</span>
+      <span style={{fontSize:12,color:C.dk,lineHeight:1.6}}>{msg}</span>
+    </div>);
+  };
+
+  const secs=[{id:"resumen",lbl:"Resumen"},{id:"eficiencia",lbl:"Eficiencia"},{id:"graficos",lbl:"Gráficos"},{id:"creativos",lbl:"Creativos"}];
+
+  return(
+    <div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:18}}>
+        {secs.map(s=><button key={s.id} onClick={()=>setSec(s.id)} style={{background:sec===s.id?C.bk:"transparent",color:sec===s.id?C.wh:C.gy,border:"1.5px solid "+(sec===s.id?C.bk:C.lg),borderRadius:100,padding:"6px 14px",fontSize:12,fontWeight:600}}>{s.lbl}</button>)}
+      </div>
+      <ObjFilter objs={objs} active={objF} onChange={setObjF}/>
+
+      {sec==="resumen"&&(
+        <div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:11,marginBottom:20}}>
+            <StatCard label="Gasto total" value={"CLP "+fmtM(tG)} accent={C.bk}/>
+            <StatCard label="Total leads" value={tL} accent={C.bl}/>
+            <StatCard label="CPL promedio" value={"$"+fmt(avg)} accent={C.bl}/>
+            <StatCard label="Mejor CPL" value={best?"$"+fmt(best.cpl):"—"} sub={best?.nombre?.slice(0,22)} accent={C.bl}/>
+            <StatCard label="Peor CPL" value={worst?"$"+fmt(worst.cpl):"—"} sub={worst?.nombre?.slice(0,22)} accent={C.pk}/>
+            <StatCard label="En riesgo" value={tG>0?Math.round(criticals.reduce((a,c)=>a+c.gasto,0)/tG*100)+"%":"0%"} sub="CPL > 2x promedio" accent={criticals.length>0?C.or:C.bl}/>
+          </div>
+          {best&&worst&&worst.cpl/best.cpl>4&&<Alert type="alert" icon="🚨" msg={"Brecha "+Math.round(worst.cpl/best.cpl)+"x: "+worst.nombre.slice(0,30)+" cuesta "+Math.round(worst.cpl/best.cpl)+"x más por lead que "+best.nombre.slice(0,30)+"."}/>}
+          {criticals.length>0&&<Alert type="alert" icon="💸" msg={"CLP "+fmt(criticals.reduce((a,c)=>a+c.gasto,0))+" en "+criticals.length+" campaña(s) con CPL > 2x promedio. Redirigir a "+best?.nombre?.slice(0,25)+" generaría ~"+Math.round(criticals.reduce((a,c)=>a+c.gasto,0)*.6/(best?.cpl||1))+" leads adicionales."}/>}
+          {noLeads.length>0&&<Alert type="alert" icon="🗑️" msg={noLeads.length+" campaña(s) gastaron CLP "+fmt(noLeads.reduce((a,c)=>a+c.gasto,0))+" sin generar ningún lead."}/>}
+          {saturated.length>0&&<Alert type="warn" icon="🔁" msg={saturated.length+" campaña(s) con frecuencia >4x. Creativos nuevos necesarios."}/>}
+          {smallAud.length>0&&<Alert type="warn" icon="👥" msg={smallAud.length+" campaña(s) con alcance <12k personas. Adv+ no puede optimizar."}/>}
+          {funnelAds.length>0&&<Alert type="info" icon="📝" msg={funnelAds.length+" anuncio(s) con calidad alta pero conversión baja. Simplificar formulario a máx 3 campos."}/>}
+          {best&&<Alert type="info" icon="🏆" msg={"Más eficiente: "+best.nombre+" → $"+fmt(best.cpl)+"/lead · "+eff(best).toFixed(2)+" leads por cada 1.000 CLP."}/>}
+        </div>
+      )}
+
+      {sec==="eficiencia"&&(
+        <div>
+          <div style={{background:C.wh,borderRadius:14,padding:"20px 22px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",marginBottom:14}}>
+            <div style={{fontSize:13,fontWeight:700,marginBottom:3}}>Leads por cada 1.000 CLP gastados</div>
+            <div style={{fontSize:11,color:C.gy,marginBottom:18}}>Promedio cuenta: {(tL/(tG/1000)).toFixed(2)}</div>
+            {effRank.map((c,i)=>{
+              const p=maxEff>0?(eff(c)/maxEff)*100:0;
+              const col=eff(c)>=eff(effRank[0])*.7?C.bl:eff(c)>=eff(effRank[0])*.4?C.or:C.pk;
+              return(
+                <div key={i} style={{display:"grid",gridTemplateColumns:"22px 1fr 90px 65px",gap:10,alignItems:"center",marginBottom:10}}>
+                  <div style={{width:20,height:20,borderRadius:5,background:i<2?C.bl:C.lg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:i<2?C.wh:C.gy}}>{i+1}</div>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.nombre}</div>
+                    <div style={{height:4,background:C.lg,borderRadius:2,marginTop:4}}><div style={{width:p+"%",height:"100%",background:col,borderRadius:2}}/></div>
+                  </div>
+                  <div style={{textAlign:"center"}}><span style={{fontWeight:700,color:col,fontSize:12}}>{eff(c).toFixed(2)}</span><span style={{fontSize:9,color:C.gy}}> l/1kCLP</span></div>
+                  <div style={{textAlign:"right",fontSize:10,color:C.gy}}>
+                    <div style={{fontWeight:600}}>{tG>0?Math.round(c.gasto/tG*100):0}%</div>
+                    <div>{c.leads} leads</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{background:C.wh,borderRadius:14,padding:"20px 22px",boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+            <div style={{fontSize:13,fontWeight:700,marginBottom:3}}>Desbalance gasto vs leads</div>
+            <div style={{fontSize:11,color:C.gy,marginBottom:16}}>Campañas con mayor diferencia entre % de gasto y % de leads generados</div>
+            {cwl.map((c,i)=>{
+              const pg=tG>0?Math.round(c.gasto/tG*100):0;
+              const pl=tL>0?Math.round(c.leads/tL*100):0;
+              const diff=pg-pl;
+              const waste=diff>8, under=diff<-8;
+              return(
+                <div key={i} style={{background:waste?C.pk+"08":under?C.bl+"08":C.cr,borderRadius:9,padding:"10px 13px",marginBottom:7,border:"1px solid "+(waste?C.pk+"25":under?C.bl+"25":C.lg)}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,flexWrap:"wrap",gap:6}}>
+                    <span style={{fontSize:11,fontWeight:700}}>{c.nombre.slice(0,45)}</span>
+                    {waste&&<Pill color={C.pk}>Gasto alto, poco retorno</Pill>}
+                    {under&&<Pill color={C.bl}>Subfinanciada</Pill>}
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                    {[["% gasto",pg+"%" ,waste?C.pk:C.bk],["% leads",pl+"%",under?C.bl:C.bk],["Δ",(diff>0?"+":"")+diff+"pp",waste?C.pk:under?C.bl:C.gy]].map(([l,v,co])=>(
+                      <div key={l}><div style={{fontSize:9,color:C.gy,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>{l}</div><div style={{fontSize:15,fontWeight:700,color:co}}>{v}</div></div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {sec==="graficos"&&(
+        <div>
+          {cwl.length>0&&(
+            <div style={{background:C.wh,borderRadius:14,padding:"20px 22px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",marginBottom:14}}>
+              <div style={{fontSize:13,fontWeight:700,marginBottom:3}}>CPL por campaña</div>
+              <div style={{fontSize:11,color:C.gy,marginBottom:18}}>Rojo = más caro · azul = más eficiente</div>
+              <BarChart data={cwl.slice(0,10)} valueKey="cpl" labelKey="nombre" height={180}/>
+            </div>
+          )}
+          {setsWL.length>0&&(
+            <div style={{background:C.wh,borderRadius:14,padding:"20px 22px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",marginBottom:14}}>
+              <div style={{fontSize:13,fontWeight:700,marginBottom:3}}>Alcance vs CPL — conjuntos</div>
+              <div style={{fontSize:11,color:C.gy,marginBottom:16}}>Barra = audiencia · color = CPL vs promedio</div>
+              {setsWL.map((s,i)=>{
+                const maxA=setsWL[0]?.alcance||1;
+                const p=Math.min((s.alcance/maxA)*100,100);
+                const col=s.cpl>avgSetCPL*2?C.pk:s.cpl>avgSetCPL*1.3?C.or:C.bl;
+                return(
+                  <div key={i} style={{display:"grid",gridTemplateColumns:"130px 1fr 80px",gap:10,alignItems:"center",marginBottom:8}}>
+                    <div style={{fontSize:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:s.cpl<avgSetCPL?C.bk:C.gy,fontWeight:s.cpl<avgSetCPL?600:400}}>{s.nombre}</div>
+                    <div><div style={{height:5,background:C.lg,borderRadius:3}}><div style={{width:p+"%",height:"100%",background:col,borderRadius:3}}/></div><div style={{fontSize:9,color:C.gy,marginTop:2}}>{fmt(s.alcance)} personas</div></div>
+                    <div style={{fontSize:11,fontWeight:700,color:col,textAlign:"right",fontFamily:"monospace"}}>${fmt(s.cpl)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {camps.length>0&&(
+            <div style={{background:C.wh,borderRadius:14,padding:"20px 22px",boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+              <div style={{fontSize:13,fontWeight:700,marginBottom:3}}>Distribución de presupuesto</div>
+              <div style={{fontSize:11,color:C.gy,marginBottom:16}}>% del gasto total por campaña</div>
+              {[...camps].sort((a,b)=>b.gasto-a.gasto).slice(0,8).map((c,i)=>{
+                const p=tG>0?(c.gasto/tG)*100:0;
+                const col=p>20?C.pk:p>10?C.or:C.bl;
+                return(
+                  <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,alignItems:"center",marginBottom:10}}>
+                    <div style={{fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.nombre}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}><div style={{flex:1,height:5,background:C.lg,borderRadius:3}}><div style={{width:p+"%",height:"100%",background:col,borderRadius:3}}/></div><span style={{fontSize:11,fontWeight:700,color:col,minWidth:32}}>{p.toFixed(1)}%</span></div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {sec==="creativos"&&(
+        <div>
+          {funnelAds.length>0&&(
+            <div style={{background:C.wh,borderRadius:14,padding:"18px 20px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",marginBottom:12,borderLeft:"4px solid "+C.or}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.or,marginBottom:9}}>⚠ Problema post-clic — calidad alta, conversión baja</div>
+              {funnelAds.map((a,i)=>(
+                <div key={i} style={{background:C.cr,borderRadius:8,padding:"8px 11px",marginBottom:5,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+                  <span style={{fontSize:11,fontWeight:600}}>{a.nombre.slice(0,50)}</span>
+                  <span style={{fontSize:11,color:C.pk,fontFamily:"monospace",fontWeight:600}}>CPL ${fmt(a.cpl)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            <div style={{background:C.wh,borderRadius:14,padding:"16px 18px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",borderTop:"4px solid "+C.bl}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.bl,marginBottom:12}}>🏆 Top creativos</div>
+              {topAds.map((a,i)=>(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9,paddingBottom:9,borderBottom:i<topAds.length-1?"1px solid "+C.lg:"none"}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:10,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nombre.slice(0,32)}</div>
+                    <div style={{fontSize:9,color:C.gy}}>{a.leads} leads</div>
+                  </div>
+                  <span style={{fontSize:12,fontWeight:700,color:C.bl,fontFamily:"monospace",marginLeft:6}}>${fmt(a.cpl)}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{background:C.wh,borderRadius:14,padding:"16px 18px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",borderTop:"4px solid "+C.pk}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.pk,marginBottom:12}}>⚠ Peores creativos</div>
+              {worstAds.map((a,i)=>(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9,paddingBottom:9,borderBottom:i<worstAds.length-1?"1px solid "+C.lg:"none"}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:10,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nombre.slice(0,32)}</div>
+                    <div style={{fontSize:9,color:C.gy}}><SBadge val={a.calidad}/></div>
+                  </div>
+                  <span style={{fontSize:12,fontWeight:700,color:C.pk,fontFamily:"monospace",marginLeft:6}}>${fmt(a.cpl)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 5 RECOMENDACIONES ───────────────────────────────────────
+function RecoTab({campaigns,adSets,ads}) {
+  const tG=campaigns.reduce((a,c)=>a+c.gasto,0);
+  const tL=campaigns.reduce((a,c)=>a+c.leads,0);
+  const avg=tL>0?tG/tL:0;
+  const cwl=campaigns.filter(c=>c.leads>0).sort((a,b)=>a.cpl-b.cpl);
+  const best=cwl[0];
+  const signals=[];
+
+  const crit=cwl.filter(c=>c.cpl>avg*2).sort((a,b)=>b.gasto-a.gasto);
+  const wG=crit.reduce((a,c)=>a+c.gasto,0);
+  const ext=best?Math.round(wG*.6/best.cpl):0;
+  if(crit.length>0) signals.push({score:wG,color:C.pk,icon:"⛔",urg:"HOY",tipo:"presupuesto",
+    titulo:crit.length===1?"Recortar presupuesto de: "+crit[0].nombre.slice(0,35):"Recortar "+crit.length+" campañas con CPL crítico",
+    porque:"Consumen CLP "+fmt(wG)+" ("+Math.round(wG/tG*100)+"% del total) y generan solo "+Math.round(crit.reduce((a,c)=>a+c.leads,0)/tL*100)+"% de los leads. CPL promedio "+Math.round(crit.reduce((a,c)=>a+c.cpl,0)/crit.length/avg)+"x el promedio de la cuenta.",
+    accion:"Recortar 60–70% a: "+crit.slice(0,3).map(c=>c.nombre.slice(0,25)).join(", ")+". Redirigir a "+(best?.nombre?.slice(0,30)||"mejor campaña")+".",
+    impacto:"~"+ext+" leads adicionales sin aumentar el presupuesto total",
+    items:crit.slice(0,3).map(c=>c.nombre.slice(0,45)+" — CPL $"+fmt(c.cpl)),
+  });
+
+  const nl=campaigns.filter(c=>c.gasto>5000&&c.leads===0);
+  if(nl.length>0) signals.push({score:nl.reduce((a,c)=>a+c.gasto,0)*1.5,color:C.pk,icon:"🗑️",urg:"HOY",tipo:"presupuesto",
+    titulo:"Pausar "+nl.length+" campaña(s) con gasto y cero resultados",
+    porque:"Gastaron CLP "+fmt(nl.reduce((a,c)=>a+c.gasto,0))+" sin generar ningún lead. El dinero se quema sin retorno posible.",
+    accion:"Pausar inmediatamente y revisar configuración del píxel y evento de conversión.",
+    impacto:"Recupera CLP "+fmt(nl.reduce((a,c)=>a+c.gasto,0))+" para reasignar",
+    items:nl.slice(0,3).map(c=>c.nombre.slice(0,45)+" — "+fmt(c.gasto)+" CLP, 0 leads"),
+  });
+
+  const sat=campaigns.filter(c=>c.frecuencia>4&&c.leads>0).sort((a,b)=>b.frecuencia-a.frecuencia);
+  if(sat.length>0) signals.push({score:sat.reduce((a,c)=>a+c.gasto,0)*.8,color:C.or,icon:"🎨",urg:"ESTA SEMANA",tipo:"creativos",
+    titulo:"Renovar creativos en "+sat.length+" campaña(s) saturadas",
+    porque:"Frecuencia "+sat.map(c=>c.frecuencia.toFixed(1)+"x").join(", ")+". Sobre 4x la audiencia deja de responder — el CPL sube aunque el targeting sea correcto.",
+    accion:"2–3 creativos con propuesta de valor distinta. Meta: bajar frecuencia <2.5x en 2 semanas.",
+    impacto:"Puede reducir CPL 30–50% sin cambiar presupuesto ni audiencia",
+    items:sat.slice(0,3).map(c=>c.nombre.slice(0,45)+" — frec. "+c.frecuencia.toFixed(1)+"x"),
+  });
+
+  const sml=campaigns.filter(c=>c.alcance>0&&c.alcance<12000&&c.leads>0);
+  if(sml.length>0) signals.push({score:sml.reduce((a,c)=>a+c.gasto,0)*1.2,color:C.or,icon:"🗺️",urg:"ESTA SEMANA",tipo:"audiencia",
+    titulo:"Ampliar audiencia en "+sml.length+" campaña(s) con alcance microscópico",
+    porque:"Adv+ necesita mín. 50k personas. Con "+sml.map(c=>fmt(c.alcance)).join(", ")+" personas el algoritmo no puede aprender.",
+    accion:"Ampliar cobertura geográfica, rango etario 25–55 años, e intereses en Adv+ como sugerencias.",
+    impacto:"Con audiencia >50k el CPL puede bajar hasta 60%",
+    items:sml.slice(0,3).map(s=>s.nombre.slice(0,45)+" — "+fmt(s.alcance)+" personas"),
+  });
+
+  const fn=ads.filter(a=>/encima|above/i.test(a.calidad)&&/abajo|below/i.test(a.conversion)&&a.leads>0);
+  if(fn.length>0) signals.push({score:fn.reduce((a,x)=>a+x.gasto,0)*.9,color:C.bl,icon:"📝",urg:"ESTA SEMANA",tipo:"formulario",
+    titulo:"Simplificar formularios — "+fn.length+" anuncio(s) pierden leads post-clic",
+    porque:"Calidad encima del promedio + conversión abajo = el creativo atrae pero el formulario repele.",
+    accion:"Máximo 3 campos. Pantalla de confirmación. Testear landing externa vs. formulario nativo.",
+    impacto:"Formularios simples pueden duplicar la tasa de conversión",
+    items:fn.slice(0,3).map(a=>a.nombre.slice(0,45)+" — CPL $"+fmt(a.cpl)),
+  });
+
+  const under=cwl.filter(c=>c.cpl<avg*.6&&tG>0&&c.gasto/tG<0.1);
+  if(under.length>0) signals.push({score:under.reduce((a,c)=>a+(avg-c.cpl)*c.leads,0)*.7,color:C.bl,icon:"🚀",urg:"ESTA SEMANA",tipo:"presupuesto",
+    titulo:"Escalar "+under.length+" campaña(s) subfinanciadas con CPL óptimo",
+    porque:under.map(c=>c.nombre.slice(0,25)).join(", ")+" tiene CPL "+under.map(c=>"$"+fmt(c.cpl)).join(", ")+" pero solo recibe "+under.map(c=>Math.round(c.gasto/tG*100)).join(", ")+"% del presupuesto.",
+    accion:"Aumentar 30–50% el presupuesto diario. Máximo +20% cada 3 días.",
+    impacto:"Cada CLP aquí genera "+(under[0]?eff(under[0]).toFixed(2):"más")+" leads por 1.000 CLP",
+    items:under.slice(0,2).map(c=>c.nombre.slice(0,45)+" — CPL $"+fmt(c.cpl)),
+  });
+
+  const generics=[
+    {color:C.or,icon:"🤖",urg:"PRÓXIMA SEMANA",tipo:"optimización",titulo:"Crear reglas automáticas de pausa por CPL",porque:"Sin reglas, una campaña puede disparar el CPL durante el finde sin que nadie lo note hasta el lunes.",accion:"Ads Manager → Reglas automáticas → si CPL > 2x promedio por 2 días → pausar y notificar.",impacto:"Evita quemar presupuesto en períodos de bajo rendimiento",items:[]},
+    {color:C.bl,icon:"👥",urg:"PRÓXIMA SEMANA",tipo:"audiencia",titulo:"Crear audiencias lookalike de tus mejores leads",porque:"Con leads pasados, Meta puede encontrar perfiles similares. Las lookalike 1–3% son más eficientes que intereses.",accion:"Subir lista de leads (mín. 100) → Audiencias → Lookalike 1%, 2%, 3% → testear en conjuntos separados.",impacto:"Las lookalike suelen tener CPL 20–40% menor que audiencias de intereses",items:[]},
+    {color:C.bl,icon:"🧪",urg:"PRÓXIMA SEMANA",tipo:"creativos",titulo:"Implementar test A/B en tu mejor campaña",porque:"Sin comparativa sistemática, las decisiones son a ciegas. Un A/B bien configurado indica qué elemento convierte más.",accion:"Duplicar conjunto, cambiar solo una variable. Dejar correr 7 días con igual presupuesto. Pausar el perdedor.",impacto:"Los mejores creativos suelen tener 2–3x el rendimiento del promedio",items:[]},
+  ];
+
+  const top5=[...signals].sort((a,b)=>b.score-a.score).slice(0,5);
+  while(top5.length<5) top5.push(generics[top5.length-signals.length]||generics[0]);
+  const tipoCol={presupuesto:C.pk,creativos:C.or,audiencia:C.or,formulario:C.bl,optimización:C.or};
+
+  return(
+    <div>
+      <div style={{background:C.bk,borderRadius:14,padding:"20px 22px",marginBottom:22,color:C.wh}}>
+        <div style={{fontSize:10,color:"#555",fontWeight:700,letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:9}}>Prioridades detectadas automáticamente</div>
+        <p style={{margin:"0 0 5px",fontSize:15,fontWeight:700}}>Las 5 acciones de mayor impacto</p>
+        <p style={{margin:0,fontSize:12,color:"#aaa",lineHeight:1.6}}>Ordenadas por impacto económico. Las 2 primeras esta semana pueden cambiar los resultados.</p>
+      </div>
+      {top5.map((r,i)=>(
+        <div key={i} style={{background:C.wh,borderRadius:16,overflow:"hidden",boxShadow:"0 2px 8px rgba(0,0,0,.07)",border:"1px solid "+C.lg,marginBottom:12}}>
+          <div style={{display:"flex",alignItems:"stretch"}}>
+            <div style={{background:i<2?r.color:C.cr,width:52,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <span style={{fontSize:22,fontWeight:700,color:i<2?C.wh:C.lg}}>{i+1}</span>
+            </div>
+            <div style={{flex:1,padding:"14px 16px",borderBottom:"1px solid "+C.lg}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                <span style={{fontSize:17}}>{r.icon}</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700,lineHeight:1.4}}>{r.titulo}</div>
+                  <div style={{display:"flex",gap:6,marginTop:5,flexWrap:"wrap"}}>
+                    <span style={{background:i<2?r.color+"18":C.cr,color:i<2?r.color:C.gy,fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:100}}>{r.urg}</span>
+                    <span style={{background:(tipoCol[r.tipo]||C.bl)+"15",color:tipoCol[r.tipo]||C.bl,fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:100,textTransform:"uppercase"}}>{r.tipo}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={{padding:"14px 16px 16px"}}>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:9,color:C.gy,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:5}}>¿Por qué es urgente?</div>
+              <p style={{margin:0,fontSize:12,color:C.dk,lineHeight:1.6}}>{r.porque}</p>
+            </div>
+            {r.items&&r.items.length>0&&(
+              <div style={{marginBottom:10}}>
+                {r.items.map((item,j)=><div key={j} style={{background:C.cr,borderRadius:6,padding:"6px 10px",marginBottom:4,fontSize:11,color:C.gy}}>{item}</div>)}
+              </div>
+            )}
+            <div style={{background:r.color+"08",border:"1px solid "+r.color+"25",borderLeft:"4px solid "+r.color,borderRadius:8,padding:"10px 13px",marginBottom:9}}>
+              <div style={{fontSize:9,color:r.color,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>⚡ Acción concreta</div>
+              <p style={{margin:0,fontSize:12,color:C.dk,lineHeight:1.6}}>{r.accion}</p>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:7}}>
+              <div style={{width:6,height:6,borderRadius:"50%",background:r.color}}/>
+              <span style={{fontSize:11,color:r.color,fontWeight:700}}>{r.impacto}</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── COMPARAR PERÍODOS ────────────────────────────────────────
+function ComparTab() {
+  const [p1,setP1]=useState({camps:[],sets:[],ads:[]});
+  const [p2,setP2]=useState({camps:[],sets:[],ads:[]});
+  const [fs1,setFs1]=useState({c:"",s:"",a:""});
+  const [fs2,setFs2]=useState({c:"",s:"",a:""});
+
+  const hf=(period,key,parser)=>(rows,st)=>{
+    if(period===1){setFs1(f=>({...f,[key]:st}));if(st==="ok")setP1(d=>({...d,[key==="c"?"camps":key==="s"?"sets":"ads"]:parser(rows)}));}
+    else{setFs2(f=>({...f,[key]:st}));if(st==="ok")setP2(d=>({...d,[key==="c"?"camps":key==="s"?"sets":"ads"]:parser(rows)}));}
+  };
+
+  const s1=p1.camps.reduce((a,c)=>a+c.gasto,0), s2=p2.camps.reduce((a,c)=>a+c.gasto,0);
+  const l1=p1.camps.reduce((a,c)=>a+c.leads,0), l2=p2.camps.reduce((a,c)=>a+c.leads,0);
+  const c1=l1>0?s1/l1:0, c2=l2>0?s2/l2:0;
+  const hasBoth=p1.camps.length>0&&p2.camps.length>0;
+
+  const Chg=({v1,v2,inv})=>{
+    if(!v1||!v2) return null;
+    const pct=Math.round((v2-v1)/v1*100);
+    const good=inv?pct>0:pct<0;
+    const col=good?C.bl:pct===0?C.gy:C.pk;
+    return <span style={{background:col+"18",color:col,fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:100,fontFamily:"monospace"}}>{pct>0?"+":""}{pct}%</span>;
+  };
+
+  return(
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:22}}>
+        {[[1,fs1],[2,fs2]].map(([p,fs])=>(
+          <div key={p} style={{background:C.wh,borderRadius:14,padding:"18px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",borderTop:"4px solid "+(p===1?C.bl:C.or)}}>
+            <div style={{fontSize:12,fontWeight:700,marginBottom:12,color:p===1?C.bl:C.or}}>Período {p}</div>
+            <div style={{display:"flex",flexDirection:"column",gap:7}}>
+              <UploadZone label="Campañas" icon="📊" desc="CSV campañas" status={fs.c} onFile={hf(p,"c",parseCamps)}/>
+              <UploadZone label="Conjuntos" icon="🗂" desc="CSV conjuntos" status={fs.s} onFile={hf(p,"s",parseSets)}/>
+              <UploadZone label="Anuncios" icon="🎨" desc="CSV anuncios" status={fs.a} onFile={hf(p,"a",parseAds)}/>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {hasBoth&&(
+        <div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:11,marginBottom:18}}>
+            {[
+              ["Gasto","CLP "+fmtM(s1),"CLP "+fmtM(s2),s1,s2,false,C.bk],
+              ["Leads",l1,l2,l1,l2,true,C.bl],
+              ["CPL promedio","$"+fmt(c1),"$"+fmt(c2),c1,c2,false,C.pk],
+            ].map(([label,v1,v2,n1,n2,inv,ac])=>(
+              <div key={label} style={{background:C.wh,borderRadius:12,padding:"14px 13px",borderTop:"4px solid "+ac,boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+                <div style={{fontSize:9,color:C.gy,letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700,marginBottom:6}}>{label}</div>
+                <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:5}}>
+                  <div><div style={{fontSize:9,color:C.bl,fontWeight:700,marginBottom:2}}>P1</div><div style={{fontSize:14,fontWeight:700}}>{v1}</div></div>
+                  <div style={{fontSize:11,color:C.gy}}>→</div>
+                  <div><div style={{fontSize:9,color:C.or,fontWeight:700,marginBottom:2}}>P2</div><div style={{fontSize:14,fontWeight:700}}>{v2}</div></div>
+                </div>
+                <Chg v1={n1} v2={n2} inv={inv}/>
+              </div>
+            ))}
+          </div>
+
+          <div style={{background:C.wh,borderRadius:14,padding:"20px 22px",boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+            <div style={{fontSize:13,fontWeight:700,marginBottom:16}}>Comparación por campaña</div>
+            {p1.camps.map((c1c,i)=>{
+              const c2c=p2.camps.find(c=>c.nombre===c1c.nombre);
+              if(!c2c) return null;
+              const cplChg=c1c.cpl>0?Math.round((c2c.cpl-c1c.cpl)/c1c.cpl*100):0;
+              const leadsChg=c1c.leads>0?Math.round((c2c.leads-c1c.leads)/c1c.leads*100):0;
+              const better=cplChg<-5, worse=cplChg>5;
+              return(
+                <div key={i} style={{background:better?C.bl+"08":worse?C.pk+"08":C.cr,borderRadius:9,padding:"11px 13px",marginBottom:7,border:"1px solid "+(better?C.bl+"20":worse?C.pk+"20":C.lg)}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7,flexWrap:"wrap",gap:6}}>
+                    <span style={{fontSize:11,fontWeight:700}}>{c1c.nombre.slice(0,45)}</span>
+                    {better&&<Pill color={C.bl}>Mejoró</Pill>}
+                    {worse&&<Pill color={C.pk}>Empeoró</Pill>}
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:9}}>
+                    {[["CPL P1","$"+fmt(c1c.cpl),C.bk],["CPL P2","$"+fmt(c2c.cpl),C.bk],["CPL Δ",(cplChg>0?"+":"")+cplChg+"%",cplChg<0?C.bl:cplChg>0?C.pk:C.gy],["Leads Δ",(leadsChg>0?"+":"")+leadsChg+"%",leadsChg>0?C.bl:leadsChg<0?C.pk:C.gy]].map(([l,v,co])=>(
+                      <div key={l}><div style={{fontSize:9,color:C.gy,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>{l}</div><div style={{fontSize:13,fontWeight:700,color:co}}>{v}</div></div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {!hasBoth&&(p1.camps.length>0||p2.camps.length>0)&&(
+        <div style={{background:C.bl+"10",border:"1px solid "+C.bl+"25",borderLeft:"4px solid "+C.bl,borderRadius:10,padding:"13px 16px"}}>
+          <span style={{fontSize:13,color:C.dk}}>Carga los datos de ambos períodos para ver la comparación.</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── MAIN APP ─────────────────────────────────────────────────
+function App() {
+  const [tab,setTab]=useState("upload");
+  const [fs,setFs]=useState({c:"",s:"",a:""});
+  const [data,setData]=useState({camps:[],sets:[],ads:[]});
+  const [expanded,setExpanded]=useState(null);
+  const [objF,setObjF]=useState({ov:"all",w:"all",adv:"all"});
+
+  const hf=(key,parser)=>(rows,st)=>{
+    setFs(f=>({...f,[key]:st}));
+    if(st==="ok") setData(d=>({...d,[key==="c"?"camps":key==="s"?"sets":"ads"]:parser(rows)}));
+  };
+
+  const fCamps=useMemo(()=>objF.ov==="all"?data.camps:data.camps.filter(c=>c.objetivo===objF.ov),[data.camps,objF.ov]);
+  const fWorst=useMemo(()=>objF.w==="all"?data.camps:data.camps.filter(c=>c.objetivo===objF.w),[data.camps,objF.w]);
+  const fSets=useMemo(()=>objF.adv==="all"?data.sets:data.sets.filter(s=>s.objetivo===objF.adv),[data.sets,objF.adv]);
+  const campObjs=useMemo(()=>[...new Set(data.camps.map(c=>c.objetivo))],[data.camps]);
+  const setsObjs=useMemo(()=>[...new Set(data.sets.map(s=>s.objetivo))],[data.sets]);
+
+  const tG=fCamps.reduce((a,c)=>a+c.gasto,0);
+  const tL=fCamps.reduce((a,c)=>a+c.leads,0);
+  const avg=tL>0?tG/tL:0;
+  const cwl=fCamps.filter(c=>c.leads>0).sort((a,b)=>a.cpl-b.cpl);
+  const best=cwl[0], worst=cwl[cwl.length-1];
+  const critW=fWorst.filter(c=>c.leads>0&&c.cpl>avg*2);
+  const fSetsWL=fSets.filter(s=>s.leads>0).sort((a,b)=>b.alcance-a.alcance);
+  const avgSetCPL=fSetsWL.length?fSetsWL.reduce((a,s)=>a+s.cpl,0)/fSetsWL.length:0;
+  const allLoaded=fs.c==="ok"||fs.s==="ok"||fs.a==="ok";
+
+  const TABS=[
+    {id:"upload",lbl:"📂 Importar"},
+    {id:"ov",lbl:"Panorama"},
+    {id:"analisis",lbl:"📈 Análisis"},
+    {id:"reco",lbl:"⚡ 5 Recomendaciones"},
+    {id:"worst",lbl:"Campañas críticas"},
+    {id:"adv",lbl:"Adv+ vs Intereses"},
+    {id:"comp",lbl:"⟷ Comparar períodos"},
+  ];
+
+  return(
+    <div style={{minHeight:"100vh",background:C.cr,paddingBottom:80}}>
+      <div style={{background:C.bk,padding:"0 32px",position:"sticky",top:0,zIndex:100}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:16,flexWrap:"wrap",gap:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:13}}>
+            <img src={LOGO} alt="MÁS" style={{height:27,filter:"invert(1)",objectFit:"contain"}}/>
+            <div style={{width:1,height:24,background:"#2a2a2a"}}/>
+            <div>
+              <div style={{fontSize:10,color:"#555",letterSpacing:"0.18em",textTransform:"uppercase",fontWeight:700}}>Meta Ads Dashboard</div>
+              {allLoaded&&<div style={{fontSize:10,color:"#444",marginTop:1}}>{data.camps.length} campañas · {data.sets.length} conjuntos · {data.ads.length} anuncios</div>}
+            </div>
+          </div>
+          {allLoaded&&campObjs.length>1&&(
+            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+              {campObjs.map(o=>{const m=OBJ[o]||OBJ.otro;return(
+                <div key={o} style={{display:"flex",alignItems:"center",gap:4,background:m.color+"20",borderRadius:100,padding:"3px 9px"}}>
+                  <div style={{width:5,height:5,borderRadius:"50%",background:m.color}}/>
+                  <span style={{fontSize:9,color:m.color,fontWeight:700}}>{m.icon} {data.camps.filter(c=>c.objetivo===o).length}</span>
+                </div>);}
+              )}
+            </div>
+          )}
+        </div>
+        <div style={{display:"flex",height:3,marginTop:13}}>
+          <div style={{flex:1,background:C.pk}}/><div style={{flex:1,background:C.bl}}/><div style={{flex:1,background:C.or}}/>
+        </div>
+        <div style={{display:"flex",flexWrap:"nowrap",overflowX:"auto"}}>
+          {TABS.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{background:"transparent",color:tab===t.id?C.wh:"#555",border:"none",borderBottom:"3px solid "+(tab===t.id?C.pk:"transparent"),padding:"10px 13px",fontSize:11,fontWeight:600,letterSpacing:"0.03em",whiteSpace:"nowrap"}}>{t.lbl}</button>)}
+        </div>
+      </div>
+
+      <div style={{padding:"26px 32px"}}>
+
+        {tab==="upload"&&(
+          <div style={{maxWidth:820,margin:"0 auto"}}>
+            <h2 style={{fontSize:19,fontWeight:700,marginBottom:7}}>Importar reportes</h2>
+            <p style={{fontSize:13,color:C.gy,lineHeight:1.7,marginBottom:20}}>Exporta los reportes desde Meta Ads Manager en CSV. El dashboard detecta automáticamente el objetivo de cada campaña y te permite filtrar por tipo.</p>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:11,marginBottom:22}}>
+              <UploadZone label="Campañas" icon="📊" desc="Vista Campañas · Exportar → CSV" status={fs.c} onFile={hf("c",parseCamps)}/>
+              <UploadZone label="Conjuntos de anuncios" icon="🗂" desc="Vista Conjuntos · Exportar → CSV" status={fs.s} onFile={hf("s",parseSets)}/>
+              <UploadZone label="Anuncios" icon="🎨" desc="Vista Anuncios · Exportar → CSV" status={fs.a} onFile={hf("a",parseAds)}/>
+            </div>
+            {data.camps.length>0&&(
+              <div style={{background:C.wh,borderRadius:14,padding:"18px 22px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",marginBottom:14}}>
+                <div style={{fontSize:12,fontWeight:700,marginBottom:13}}>Objetivos detectados</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:9}}>
+                  {campObjs.map(o=>{const m=OBJ[o]||OBJ.otro;const cs=data.camps.filter(c=>c.objetivo===o);return(
+                    <div key={o} style={{background:C.cr,borderRadius:9,padding:"13px",borderLeft:"4px solid "+m.color}}>
+                      <div style={{fontSize:15,marginBottom:4}}>{m.icon}</div>
+                      <div style={{fontSize:11,fontWeight:700,color:m.color,marginBottom:5}}>{m.label}</div>
+                      <div style={{fontSize:10,color:C.gy}}>{cs.length} campañas · {cs.reduce((a,c)=>a+c.leads,0)} leads · CLP {fmt(cs.reduce((a,c)=>a+c.gasto,0))}</div>
+                    </div>);}
+                  )}
+                </div>
+              </div>
+            )}
+            {allLoaded&&(
+              <div style={{background:C.bk,borderRadius:12,padding:"13px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
+                <div><div style={{fontSize:12,fontWeight:700,color:C.wh}}>Datos cargados</div><div style={{fontSize:10,color:"#555",marginTop:2}}>{data.camps.length} campañas · {data.sets.length} conjuntos · {data.ads.length} anuncios</div></div>
+                <button onClick={()=>setTab("ov")} style={{background:C.pk,color:C.wh,border:"none",borderRadius:8,padding:"8px 18px",fontSize:12,fontWeight:700}}>Ver Panorama →</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab==="ov"&&(
+          data.camps.length===0?<EmptyState onGo={()=>setTab("upload")}/>:(
+            <div>
+              <ObjFilter objs={campObjs} active={objF.ov} onChange={v=>setObjF(f=>({...f,ov:v}))}/>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(138px,1fr))",gap:11,marginBottom:22}}>
+                <StatCard label="Gasto total" value={"CLP "+fmtM(tG)} accent={C.bk}/>
+                <StatCard label="Total leads" value={tL} accent={C.bl}/>
+                <StatCard label="CPL promedio" value={"$"+fmt(avg)} accent={C.bl}/>
+                <StatCard label="Mejor CPL" value={best?"$"+fmt(best.cpl):"—"} sub={best?.nombre?.slice(0,20)} accent={C.bl}/>
+                <StatCard label="Peor CPL" value={worst?"$"+fmt(worst.cpl):"—"} sub={worst?.nombre?.slice(0,20)} accent={C.pk}/>
+                <StatCard label="Campañas críticas" value={critW.length} sub="CPL > 2x promedio" accent={critW.length>0?C.or:C.bl}/>
+              </div>
+              <div style={{background:C.wh,borderRadius:14,padding:"20px 22px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",marginBottom:14}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
+                  <div><div style={{fontSize:13,fontWeight:700}}>Ranking por CPL</div><div style={{fontSize:11,color:C.gy,marginTop:2}}>CPL promedio: ${fmt(avg)}</div></div>
+                  <div style={{display:"flex",gap:10}}>{[[C.pk,"Crítico"],[C.or,"Atención"],[C.bl,"Óptimo"]].map(([col,lbl])=><div key={lbl} style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:7,height:7,borderRadius:"50%",background:col}}/><span style={{fontSize:10,color:C.gy,fontWeight:600}}>{lbl}</span></div>)}</div>
+                </div>
+                {cwl.map((c,i)=>{
+                  const m=OBJ[c.objetivo]||OBJ.otro;
+                  const col=c.cpl>avg*2?C.pk:c.cpl>avg*1.5?C.or:c.cpl<avg*.7?C.bl:C.gy;
+                  const pct=cwl.length>0?(c.cpl/cwl[cwl.length-1].cpl)*100:0;
+                  return(
+                    <div key={i} style={{display:"grid",gridTemplateColumns:"22px 15px 1fr 1fr",gap:10,alignItems:"center",marginBottom:11}}>
+                      <div style={{width:20,height:20,borderRadius:5,background:c.cpl>avg*2?C.pk:c.cpl<avg*.7?C.bl:C.lg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:c.cpl>avg*2||c.cpl<avg*.7?C.wh:C.gy}}>{i+1}</div>
+                      <span title={m.label} style={{fontSize:12}}>{m.icon}</span>
+                      <div><div style={{fontSize:11,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.nombre}</div><div style={{fontSize:9,color:C.gy,marginTop:1}}>{c.leads} leads · frec. {c.frecuencia.toFixed(1)}x</div></div>
+                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                        <div style={{flex:1,height:3,background:C.lg,borderRadius:2}}><div style={{width:pct+"%",height:"100%",background:col,borderRadius:2}}/></div>
+                        <span style={{fontSize:12,fontWeight:700,color:col,minWidth:80,textAlign:"right",fontFamily:"monospace"}}>${fmt(c.cpl)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {best&&<div style={{background:C.bl+"10",border:"1.5px solid "+C.bl+"25",borderLeft:"4px solid "+C.bl,borderRadius:10,padding:"13px 17px"}}><div style={{fontSize:10,color:C.bl,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:6}}>💡 Insight</div><p style={{margin:0,fontSize:12,color:C.dk,lineHeight:1.7}}><strong>{best.nombre}</strong> es la más eficiente con <strong style={{color:C.bl}}>${fmt(best.cpl)}/lead</strong>{worst&&" — "+Math.round(worst.cpl/best.cpl)+"x más eficiente que "+worst.nombre.slice(0,30)}{campObjs.length>1&&objF.ov==="all"&&<span style={{color:C.or}}> Filtra por objetivo para comparaciones justas.</span>}</p></div>}
+            </div>
+          )
+        )}
+
+        {tab==="analisis"&&(data.camps.length===0?<EmptyState onGo={()=>setTab("upload")}/>:<AnalisisTab campaigns={data.camps} adSets={data.sets} ads={data.ads}/>)}
+
+        {tab==="reco"&&(data.camps.length===0?<EmptyState onGo={()=>setTab("upload")}/>:<RecoTab campaigns={data.camps} adSets={data.sets} ads={data.ads}/>)}
+
+        {tab==="worst"&&(
+          data.camps.length===0?<EmptyState onGo={()=>setTab("upload")}/>:(
+            <div>
+              <ObjFilter objs={campObjs} active={objF.w} onChange={v=>setObjF(f=>({...f,w:v}))}/>
+              {critW.length===0?(
+                <div style={{background:C.wh,borderRadius:14,padding:"48px 32px",textAlign:"center",boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}><div style={{fontSize:32,marginBottom:12}}>🎉</div><div style={{fontSize:16,fontWeight:700}}>No hay campañas críticas</div></div>
+              ):(
+                <div>
+                  <div style={{background:C.wh,borderRadius:12,padding:"13px 17px",marginBottom:16,display:"flex",gap:18,flexWrap:"wrap",boxShadow:"0 1px 4px rgba(0,0,0,.06)",borderLeft:"4px solid "+C.pk}}>
+                    {[["CPL promedio","$"+fmt(avg),C.bk],["Críticas",critW.length,C.pk],["Gasto en críticas","CLP "+fmt(critW.reduce((a,c)=>a+c.gasto,0)),C.pk]].map(([l,v,co])=><div key={l}><div style={{fontSize:9,color:C.gy,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase"}}>{l}</div><div style={{fontSize:17,fontWeight:700,color:co,marginTop:3}}>{v}</div></div>)}
+                  </div>
+                  {critW.map((c,idx)=>{
+                    const ac=c.cpl>avg*4?C.pk:C.or;
+                    return(
+                      <div key={idx} style={{background:C.wh,borderRadius:14,marginBottom:9,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.06)",borderTop:"4px solid "+ac}}>
+                        <div onClick={()=>setExpanded(expanded===idx?null:idx)} style={{padding:"14px 18px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:9}}>
+                          <div style={{display:"flex",alignItems:"center",gap:11}}>
+                            <div style={{background:ac,borderRadius:7,padding:"4px 10px"}}><span style={{fontSize:11,fontWeight:700,color:C.wh,fontFamily:"monospace"}}>${fmt(c.cpl)}</span></div>
+                            <div><div style={{fontSize:12,fontWeight:700}}>{c.nombre}</div><div style={{fontSize:10,color:C.gy,marginTop:1}}>{c.leads} leads · frec. {c.frecuencia.toFixed(1)}x · {(c.cpl/avg).toFixed(1)}x el promedio</div></div>
+                          </div>
+                          <span style={{fontSize:11,color:C.gy}}>{expanded===idx?"▲":"▼"}</span>
+                        </div>
+                        {expanded===idx&&(
+                          <div style={{padding:"0 18px 16px",borderTop:"1px solid "+C.lg}}>
+                            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(95px,1fr))",gap:8,marginTop:13,marginBottom:13}}>
+                              {[["Leads",c.leads,false],["Gasto","CLP "+fmt(c.gasto),false],["Frecuencia",c.frecuencia.toFixed(1)+"x",c.frecuencia>3],["CPR vs avg",(c.cpl/avg).toFixed(1)+"x",true],["Alcance",fmt(c.alcance),c.alcance<15000]].map(([l,v,al])=>(
+                                <div key={l} style={{background:al?C.pk+"08":C.cr,border:"1px solid "+(al?C.pk+"25":C.lg),borderRadius:8,padding:"9px 10px"}}>
+                                  <div style={{fontSize:9,color:C.gy,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:3}}>{l}</div>
+                                  <div style={{fontSize:15,fontWeight:700,color:al?C.pk:C.bk}}>{v}</div>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{background:C.cr,borderRadius:8,padding:"11px 13px"}}>
+                              <div style={{fontSize:9,fontWeight:700,color:C.bk,marginBottom:7,textTransform:"uppercase",letterSpacing:"0.08em"}}>Acciones recomendadas</div>
+                              {[c.frecuencia>4&&"⛔ Frecuencia crítica — renovar creativos urgente",c.alcance<10000&&"🗺️ Alcance muy pequeño — ampliar targeting",c.cpl>avg*4&&"💰 Pausar y reasignar a "+(best?.nombre?.slice(0,25)||"mejor campaña"),"🎯 Verificar intereses Adv+ como sugerencias","📝 Formulario — máximo 3 campos"].filter(Boolean).map((a,j)=>(
+                                <div key={j} style={{fontSize:11,color:C.dk,lineHeight:1.6,marginBottom:5,display:"flex",gap:7}}><span>{a.slice(0,2)}</span><span>{a.slice(2)}</span></div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        )}
+
+        {tab==="adv"&&(
+          <div>
+            <div style={{background:C.bk,borderRadius:14,padding:"18px 22px",marginBottom:18,color:C.wh}}>
+              <div style={{fontSize:10,color:"#555",fontWeight:700,letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:9}}>Adv+ vs. Intereses</div>
+              <p style={{margin:"0 0 5px",fontSize:14,fontWeight:700}}>El problema no es la herramienta — es el tamaño de la audiencia.</p>
+              <p style={{margin:0,fontSize:12,color:"#aaa",lineHeight:1.6}}>Audiencias +30k → CPR óptimo. Audiencias -15k → CPR crítico.</p>
+            </div>
+            {data.sets.length>0&&(
+              <div>
+                <ObjFilter objs={setsObjs} active={objF.adv} onChange={v=>setObjF(f=>({...f,adv:v}))}/>
+                {fSetsWL.length>0&&(
+                  <div style={{background:C.wh,borderRadius:14,padding:"18px 22px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",marginBottom:14}}>
+                    <div style={{fontSize:12,fontWeight:700,marginBottom:3}}>Alcance vs CPL por conjunto</div>
+                    <div style={{fontSize:11,color:C.gy,marginBottom:15}}>Barra = audiencia · color = CPL relativo al promedio</div>
+                    {fSetsWL.map((s,i)=>{
+                      const maxA=fSetsWL[0]?.alcance||1;
+                      const p=Math.min((s.alcance/maxA)*100,100);
+                      const col=s.cpl>avgSetCPL*2?C.pk:s.cpl>avgSetCPL*1.3?C.or:C.bl;
+                      return(
+                        <div key={i} style={{display:"grid",gridTemplateColumns:"130px 1fr 80px",gap:10,alignItems:"center",marginBottom:8}}>
+                          <div style={{fontSize:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:s.cpl<avgSetCPL?C.bk:C.gy,fontWeight:s.cpl<avgSetCPL?600:400}}>{s.nombre}</div>
+                          <div><div style={{height:5,background:C.lg,borderRadius:3}}><div style={{width:p+"%",height:"100%",background:col,borderRadius:3}}/></div><div style={{fontSize:9,color:C.gy,marginTop:2}}>{fmt(s.alcance)} personas</div></div>
+                          <div style={{fontSize:11,fontWeight:700,color:col,textAlign:"right",fontFamily:"monospace"}}>${fmt(s.cpl)}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))",gap:12}}>
+              {[
+                {t:"✅ Sigue usando Adv+",co:C.bl,ps:["Funciona bien con audiencias >30k","No cambies lo que ya genera buen CPR","Usa el gráfico para detectar dónde hay problemas de tamaño"]},
+                {t:"⚙ Intereses en Adv+",co:C.or,ps:["Agrégalos como SUGERENCIAS, no restricciones","Meta puede salir si encuentra mejores audiencias","Úsalos para orientar, no para limitar"]},
+                {t:"🚫 Lo que NO hacer",co:C.pk,ps:["No restringir conjuntos con alcance < 15k","No segmentar por edad específica en nichos pequeños","No crear conjuntos sin revisar tamaño estimado"]},
+              ].map((card,i)=>(
+                <div key={i} style={{background:C.wh,borderRadius:12,padding:"16px",boxShadow:"0 1px 4px rgba(0,0,0,.06)",borderTop:"4px solid "+card.co}}>
+                  <div style={{fontSize:11,fontWeight:700,color:card.co,marginBottom:11}}>{card.t}</div>
+                  {card.ps.map((p,j)=><div key={j} style={{display:"flex",gap:7,alignItems:"flex-start",marginBottom:7}}><div style={{width:4,height:4,borderRadius:"50%",background:card.co,marginTop:6,flexShrink:0}}/><div style={{fontSize:11,color:C.dk,lineHeight:1.5}}>{p}</div></div>)}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab==="comp"&&<ComparTab/>}
+
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+</script>
+</body>
+</html>
