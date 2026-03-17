@@ -6,600 +6,337 @@
 <title>España — Madrid & Barcelona</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root {
-  --madrid: #C1440E;
-  --madrid-light: #FAE9E1;
-  --madrid-mid: #E07050;
-  --bcn: #1B5EA8;
-  --bcn-light: #E3EEFA;
-  --bcn-mid: #4A8DD4;
-  --bg: #F5F0E8;
-  --paper: #FDFAF4;
-  --ink: #1C1810;
-  --ink2: #5C5040;
-  --ink3: #9C8E7A;
-  --border: #DDD5C0;
-  --sidebar-w: 360px;
+  --m:#C1440E; --ml:#FBF0EA; --b:#1B5EA8; --bl:#E4EEF9;
+  --bg:#F4EFE5; --paper:#FDFAF4; --ink:#1C1810; --ink2:#5C5040;
+  --ink3:#9A8C78; --line:#E0D8C8; --sw:360px;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif; background: var(--bg); }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);display:flex;overflow:hidden}
 
-/* ── LAYOUT ── */
-#app { display: flex; height: 100vh; }
+#side{width:var(--sw);min-width:var(--sw);height:100vh;background:var(--paper);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;z-index:1000}
+.s-head{padding:18px 20px 0;flex-shrink:0}
+.s-title{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:var(--ink);letter-spacing:-0.3px}
+.s-sub{font-size:11px;color:var(--ink3);font-weight:300;margin-top:2px;text-transform:uppercase;letter-spacing:.8px}
+.tabs{display:flex;margin-top:14px;border-bottom:1px solid var(--line)}
+.tab{flex:1;padding:9px 0 8px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .18s;font-family:'DM Sans',sans-serif}
+.tab.on.m{color:var(--m);border-bottom-color:var(--m)}
+.tab.on.b{color:var(--b);border-bottom-color:var(--b)}
+.tab:not(.on):hover{color:var(--ink2)}
 
-/* ── SIDEBAR ── */
-#sidebar {
-  width: var(--sidebar-w);
-  min-width: var(--sidebar-w);
-  background: var(--paper);
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--border);
-  z-index: 10;
-  position: relative;
-}
+.prog-wrap{padding:11px 20px 8px;flex-shrink:0}
+.prog-row{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink3);font-weight:300;margin-bottom:5px}
+.pbar{height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.pfill{height:100%;width:0%;border-radius:2px;transition:width .35s ease}
+.pfill.m{background:var(--m)}.pfill.b{background:var(--b)}
 
-#sidebar-header {
-  padding: 20px 22px 0;
-  flex-shrink: 0;
-}
+#scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:24px}
+#scroll::-webkit-scrollbar{width:3px}
+#scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
 
-.app-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: -0.3px;
-  line-height: 1.2;
-}
-.app-sub {
-  font-size: 12px;
-  color: var(--ink3);
-  font-weight: 300;
-  margin-top: 3px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
+.grp-head{display:flex;align-items:center;gap:7px;padding:7px 20px;cursor:pointer;user-select:none;transition:background .12s}
+.grp-head:hover{background:var(--bg)}
+.g-ico{font-size:12px;width:16px;text-align:center;flex-shrink:0}
+.g-lbl{font-size:10.5px;font-weight:500;letter-spacing:.7px;text-transform:uppercase;color:var(--ink3);flex:1}
+.g-cnt{font-size:10.5px;color:var(--ink3);font-weight:300}
+.g-arr{font-size:9px;color:var(--ink3);transition:transform .18s}
+.g-arr.open{transform:rotate(90deg)}
+.g-items.hide{display:none}
 
-/* city switcher */
-.city-switch {
-  display: flex;
-  gap: 6px;
-  margin: 14px 0 0;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0;
-}
-.city-btn {
-  flex: 1;
-  padding: 9px 0;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  border: none;
-  background: transparent;
-  color: var(--ink3);
-  cursor: pointer;
-  border-bottom: 2.5px solid transparent;
-  margin-bottom: -1px;
-  transition: all .2s;
-  letter-spacing: 0.2px;
-}
-.city-btn.active[data-c="madrid"] { color: var(--madrid); border-bottom-color: var(--madrid); }
-.city-btn.active[data-c="barcelona"] { color: var(--bcn); border-bottom-color: var(--bcn); }
-.city-btn:not(.active):hover { color: var(--ink2); }
+.row{display:flex;align-items:flex-start;gap:9px;padding:8px 20px 8px 17px;cursor:pointer;border-left:3px solid transparent;transition:background .1s}
+.row:hover{background:var(--bg)}
+.row.lit.m{border-left-color:var(--m);background:var(--ml)}
+.row.lit.b{border-left-color:var(--b);background:var(--bl)}
+.box{width:16px;height:16px;min-width:16px;border-radius:3px;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;margin-top:2px;flex-shrink:0;transition:background .14s,border-color .14s}
+.row.done .box{border-color:transparent}
+.row.done.m .box{background:var(--m)}.row.done.b .box{background:var(--b)}
+.ck{display:none}.row.done .ck{display:block}
+.ri{flex:1}
+.rn{font-size:13px;font-weight:400;color:var(--ink);line-height:1.3}
+.row.done .rn{color:var(--ink3);text-decoration:line-through}
+.rt{font-size:11.5px;color:var(--ink3);font-weight:300;margin-top:1px;line-height:1.4}
+.row.done .rt{color:var(--line)}
+.tags{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.tag{font-size:10px;padding:1px 7px;border-radius:20px}
+.tmu{background:#FDE8E0;color:#A33010}.twk{background:#E2F0D4;color:#2E6010}.tni{background:#E8E4F8;color:#4030A0}
 
-/* progress */
-.progress-wrap {
-  padding: 12px 22px 10px;
-  flex-shrink: 0;
-}
-.progress-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--ink3);
-  margin-bottom: 6px;
-  font-weight: 300;
-}
-.prog-bar {
-  height: 3px;
-  background: var(--border);
-  border-radius: 2px;
-  overflow: hidden;
-}
-.prog-fill {
-  height: 100%;
-  border-radius: 2px;
-  width: 0%;
-  transition: width .4s ease;
-}
-.prog-fill.madrid { background: var(--madrid); }
-.prog-fill.barcelona { background: var(--bcn); }
+#map{flex:1;height:100vh;position:relative;background:#E8E2D8}
+#leg{position:absolute;bottom:20px;right:20px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--ink3);z-index:500;font-weight:300;line-height:1.9;pointer-events:none}
+.ldot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
 
-/* list */
-#list-scroll {
-  overflow-y: auto;
-  flex: 1;
-  padding: 4px 0 20px;
-}
-#list-scroll::-webkit-scrollbar { width: 4px; }
-#list-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.leaflet-popup-content-wrapper{background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.13);padding:0;overflow:hidden}
+.leaflet-popup-content{margin:0;padding:0;min-width:200px}
+.leaflet-popup-tip{background:var(--paper)}
+.pi{padding:12px 16px 10px}
+.pn{font-family:'Playfair Display',serif;font-size:14px;color:var(--ink);margin-bottom:4px}
+.pt{font-size:11.5px;color:var(--ink2);font-weight:300;line-height:1.4}
+.ptags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.pact{display:block;width:100%;padding:8px 16px;border:none;border-top:1px solid var(--line);background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:background .1s}
+.pact:hover{background:var(--bg)}
+.pact.m{color:var(--m)}.pact.b{color:var(--b)}.pact.done{color:var(--ink3)}
 
-.section { margin-bottom: 2px; }
-.sec-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 22px;
-  cursor: pointer;
-  user-select: none;
-  transition: background .12s;
-}
-.sec-head:hover { background: var(--bg); }
-.sec-icon { font-size: 13px; width: 18px; text-align: center; }
-.sec-label {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: var(--ink3);
-  flex: 1;
-}
-.sec-counter { font-size: 11px; color: var(--ink3); font-weight: 300; }
-.sec-toggle { font-size: 9px; color: var(--ink3); transition: transform .2s; }
-.sec-toggle.open { transform: rotate(90deg); }
-.sec-items { }
-.sec-items.closed { display: none; }
-
-.place-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 9px 22px 9px 18px;
-  cursor: pointer;
-  transition: background .12s;
-  border-left: 3px solid transparent;
-}
-.place-item:hover { background: var(--bg); }
-.place-item.active-hover { background: var(--bg); }
-
-.place-item.highlighted[data-city="madrid"] { border-left-color: var(--madrid); background: var(--madrid-light); }
-.place-item.highlighted[data-city="barcelona"] { border-left-color: var(--bcn); background: var(--bcn-light); }
-
-.check {
-  width: 17px;
-  height: 17px;
-  min-width: 17px;
-  border-radius: 3px;
-  border: 1.5px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 2px;
-  transition: all .15s;
-  flex-shrink: 0;
-}
-.place-item.done .check { border-color: transparent; }
-.place-item.done[data-city="madrid"] .check { background: var(--madrid); }
-.place-item.done[data-city="barcelona"] .check { background: var(--bcn); }
-.check-svg { display: none; }
-.place-item.done .check-svg { display: block; }
-
-.place-info { flex: 1; }
-.place-name {
-  font-size: 13.5px;
-  font-weight: 400;
-  color: var(--ink);
-  line-height: 1.3;
-  transition: color .15s;
-}
-.place-item.done .place-name { color: var(--ink3); text-decoration: line-through; }
-.place-tip {
-  font-size: 11.5px;
-  color: var(--ink3);
-  font-weight: 300;
-  margin-top: 2px;
-  line-height: 1.4;
-}
-.place-item.done .place-tip { color: var(--border); }
-
-.tags { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
-.tag {
-  font-size: 10px;
-  padding: 1px 7px;
-  border-radius: 20px;
-  font-weight: 400;
-  letter-spacing: 0.1px;
-}
-.tag-must { background: #FDE8E0; color: #A33010; }
-.tag-walk { background: #E2F0D4; color: #2E6010; }
-.tag-night { background: #E8E4F8; color: #4030A0; }
-
-/* ── MAP ── */
-#map {
-  flex: 1;
-  background: #E8E2D8;
-  position: relative;
-}
-
-/* custom leaflet popup */
-.leaflet-popup-content-wrapper {
-  background: var(--paper);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-  font-family: 'DM Sans', sans-serif;
-  padding: 0;
-}
-.leaflet-popup-content { margin: 0; padding: 0; }
-.leaflet-popup-tip { background: var(--paper); }
-.popup-inner { padding: 12px 16px; }
-.popup-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 15px;
-  color: var(--ink);
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-.popup-tip { font-size: 12px; color: var(--ink2); font-weight: 300; line-height: 1.4; }
-.popup-action {
-  display: block;
-  width: 100%;
-  padding: 8px 16px;
-  border: none;
-  border-top: 1px solid var(--border);
-  background: transparent;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  transition: background .12s;
-  border-radius: 0 0 8px 8px;
-}
-.popup-action:hover { background: var(--bg); }
-.popup-action.madrid { color: var(--madrid); }
-.popup-action.barcelona { color: var(--bcn); }
-.popup-action.done { color: var(--ink3); }
-
-/* map legend */
-#map-legend {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  background: var(--paper);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 16px;
-  font-size: 11px;
-  color: var(--ink3);
-  z-index: 500;
-  font-weight: 300;
-  line-height: 1.8;
-  pointer-events: none;
-}
-.legend-dot {
-  display: inline-block;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  margin-right: 6px;
-  vertical-align: middle;
-}
-.legend-dot.pending { background: #CCC; border: 1.5px solid #999; }
-.legend-dot.visited { background: var(--madrid); }
-
-/* responsive */
-@media (max-width: 700px) {
-  :root { --sidebar-w: 100vw; }
-  #app { flex-direction: column; }
-  #sidebar { width: 100%; min-width: unset; height: 55vh; border-right: none; border-bottom: 1px solid var(--border); }
-  #map { height: 45vh; }
+@media(max-width:680px){
+  :root{--sw:100vw}
+  html,body{flex-direction:column}
+  #side{width:100%;min-width:unset;height:55vh;border-right:none;border-bottom:1px solid var(--line)}
+  #map{height:45vh}
 }
 </style>
 </head>
 <body>
-<div id="app">
-  <div id="sidebar">
-    <div id="sidebar-header">
-      <div class="app-title">España 🗺</div>
-      <div class="app-sub">Madrid · Barcelona · Tu itinerario</div>
-      <div class="city-switch">
-        <button class="city-btn active" data-c="madrid" onclick="switchCity('madrid')">Madrid</button>
-        <button class="city-btn" data-c="barcelona" onclick="switchCity('barcelona')">Barcelona</button>
-      </div>
-    </div>
-    <div class="progress-wrap">
-      <div class="progress-row">
-        <span id="prog-label">0 lugares visitados</span>
-        <span id="prog-pct">0%</span>
-      </div>
-      <div class="prog-bar">
-        <div class="prog-fill madrid" id="prog-fill"></div>
-      </div>
-    </div>
-    <div id="list-scroll">
-      <div id="place-list"></div>
+<div id="side">
+  <div class="s-head">
+    <div class="s-title">España 🗺</div>
+    <div class="s-sub">Madrid · Barcelona · Tu ruta</div>
+    <div class="tabs">
+      <button class="tab on m" data-c="madrid" onclick="sw('madrid')">Madrid</button>
+      <button class="tab b" data-c="barcelona" onclick="sw('barcelona')">Barcelona</button>
     </div>
   </div>
-  <div id="map">
-    <div id="map-legend">
-      <div><span class="legend-dot pending"></span>Pendiente</div>
-      <div><span class="legend-dot visited" id="legend-visited"></span>Visitado</div>
-    </div>
+  <div class="prog-wrap">
+    <div class="prog-row"><span id="plbl">0 lugares visitados</span><span id="ppct">0%</span></div>
+    <div class="pbar"><div class="pfill m" id="pf"></div></div>
+  </div>
+  <div id="scroll"><div id="list"></div></div>
+</div>
+<div id="map">
+  <div id="leg">
+    <div><span class="ldot" style="background:#ccc;border:1.5px solid #999"></span>Pendiente</div>
+    <div><span class="ldot" id="lv" style="background:#C1440E"></span>Visitado</div>
   </div>
 </div>
 
 <script>
-const cities = {
-  madrid: {
-    center: [40.416, -3.703],
-    zoom: 14,
-    color: '#C1440E',
-    sections: [
-      { icon: '🏛️', label: 'Museos & monumentos', items: [
-        { name: 'Museo del Prado', tip: 'Uno de los mejores del mundo — reserva entrada online', tags: ['must'], lat: 40.4138, lng: -3.6922 },
-        { name: 'Museo Reina Sofía', tip: 'El Guernica de Picasso está aquí', tags: ['must'], lat: 40.4085, lng: -3.6941 },
-        { name: 'Palacio Real', tip: 'La fachada desde Plaza de Oriente es increíble', tags: ['walk'], lat: 40.4180, lng: -3.7143 },
-        { name: 'Templo de Debod', tip: 'Atardecer épico — llega 30 min antes', tags: ['night', 'walk'], lat: 40.4236, lng: -3.7188 },
-        { name: 'Catedral de la Almudena', tip: 'Subir a la cúpula tiene vistas 360° gratuitas', tags: ['walk'], lat: 40.4155, lng: -3.7145 },
-      ]},
-      { icon: '🚶', label: 'Barrios para caminar', items: [
-        { name: 'Malasaña', tip: 'El barrio más joven y alternativo', tags: ['walk'], lat: 40.4268, lng: -3.7055 },
-        { name: 'Lavapiés', tip: 'Multicultural y auténtico, con bares pequeños', tags: ['walk'], lat: 40.4069, lng: -3.7031 },
-        { name: 'La Latina', tip: 'Domingos = El Rastro + tapas en Cava Baja', tags: ['walk', 'must'], lat: 40.4132, lng: -3.7100 },
-        { name: 'Chueca', tip: 'Colorido, animado, buena gastronomía', tags: ['walk'], lat: 40.4236, lng: -3.6988 },
-        { name: 'Barrio de las Letras', tip: 'Donde vivían Lope de Vega y Quevedo', tags: ['walk'], lat: 40.4145, lng: -3.6972 },
-      ]},
-      { icon: '🌿', label: 'Parques & miradores', items: [
-        { name: 'Parque del Retiro', tip: 'El pulmón de Madrid — gratis y espectacular', tags: ['walk', 'must'], lat: 40.4153, lng: -3.6844 },
-        { name: 'Cerro del Tío Pío', tip: '"Las 7 tetas" — mejor atardecer de la ciudad', tags: ['night', 'walk'], lat: 40.3875, lng: -3.6678 },
-        { name: 'Jardines de Sabatini', tip: 'Junto al Palacio Real, muy tranquilos', tags: ['walk'], lat: 40.4192, lng: -3.7143 },
-      ]},
-      { icon: '🍷', label: 'Plazas, mercados & comida', items: [
-        { name: 'Plaza Mayor', tip: 'El corazón histórico de Madrid', tags: ['must'], lat: 40.4155, lng: -3.7074 },
-        { name: 'Gran Vía', tip: 'Arquitectura imponente — camínala de punta a punta', tags: ['walk'], lat: 40.4200, lng: -3.7025 },
-        { name: 'Mercado de San Miguel', tip: 'Ideal para picar de todo', tags: [], lat: 40.4151, lng: -3.7087 },
-        { name: 'Chocolatería San Ginés', tip: 'Abierta desde 1894 — churros a medianoche', tags: ['night', 'must'], lat: 40.4153, lng: -3.7079 },
-        { name: 'Calle Cava Baja', tip: 'La mejor calle de tapas de Madrid', tags: ['must'], lat: 40.4127, lng: -3.7090 },
-        { name: 'El Rastro', tip: 'Mercadillo dominguero icónico — solo domingos', tags: [], lat: 40.4091, lng: -3.7069 },
-      ]},
-    ]
-  },
-  barcelona: {
-    center: [41.392, 2.168],
-    zoom: 14,
-    color: '#1B5EA8',
-    sections: [
-      { icon: '🏗️', label: 'Gaudí & modernismo', items: [
-        { name: 'Sagrada Família', tip: 'Reserva con guía y sube a las torres', tags: ['must'], lat: 41.4036, lng: 2.1744 },
-        { name: 'Park Güell', tip: 'Zona monumental con ticket — llega temprano', tags: ['must', 'walk'], lat: 41.4145, lng: 2.1527 },
-        { name: 'Casa Batlló', tip: 'La fachada nocturna es otra dimensión', tags: ['night'], lat: 41.3916, lng: 2.1649 },
-        { name: 'Casa Milà / La Pedrera', tip: 'La azotea es de otro planeta', tags: ['must'], lat: 41.3954, lng: 2.1619 },
-        { name: 'Palau de la Música Catalana', tip: 'Joya del modernismo — tour o concierto', tags: ['must'], lat: 41.3875, lng: 2.1752 },
-      ]},
-      { icon: '🚶', label: 'Barrios para caminar', items: [
-        { name: 'Barrio Gótico', tip: 'Perderse aquí es el plan — plazas medievales escondidas', tags: ['walk', 'must'], lat: 41.3832, lng: 2.1762 },
-        { name: 'El Born / Sant Pere', tip: 'El barrio más cool — tiendas y bares', tags: ['walk', 'must'], lat: 41.3851, lng: 2.1821 },
-        { name: 'Gràcia', tip: 'Bohemio y local — Plaza del Sol y Plaza de la Vila', tags: ['walk'], lat: 41.4027, lng: 2.1565 },
-        { name: 'El Raval', tip: 'Arte, diversidad y el MACBA — muy auténtico', tags: ['walk'], lat: 41.3803, lng: 2.1676 },
-        { name: 'Barceloneta', tip: 'El barrio de la playa — paseo marítimo', tags: ['walk'], lat: 41.3796, lng: 2.1892 },
-      ]},
-      { icon: '🌅', label: 'Vistas & naturaleza', items: [
-        { name: 'Bunkers del Carmel', tip: 'El mirador secreto — mejor panorámica al atardecer', tags: ['must', 'night', 'walk'], lat: 41.4260, lng: 2.1671 },
-        { name: 'Montjuïc', tip: 'A pie o cable car — castillo, jardines y vistas al mar', tags: ['walk'], lat: 41.3636, lng: 2.1575 },
-        { name: 'Tibidabo', tip: 'El parque de atracciones más antiguo de España', tags: [], lat: 41.4217, lng: 2.1183 },
-        { name: 'Playa de la Barceloneta', tip: 'Un baño en el Mediterráneo es obligatorio', tags: ['must'], lat: 41.3796, lng: 2.1908 },
-      ]},
-      { icon: '🍷', label: 'Mercados, bares & comida', items: [
-        { name: 'Mercado de La Boqueria', tip: 'Icónico — ve temprano y compra fruta fresca', tags: [], lat: 41.3817, lng: 2.1718 },
-        { name: 'Mercado de Santa Caterina', tip: 'Más local y auténtico que La Boqueria', tags: ['must'], lat: 41.3856, lng: 2.1787 },
-        { name: 'El Xampanyet', tip: 'Bar de cava histórico — llegad temprano', tags: ['must', 'night'], lat: 41.3848, lng: 2.1826 },
-        { name: 'Bar Marsella', tip: 'El bar más antiguo de Barcelona, abrió en 1820', tags: ['night'], lat: 41.3797, lng: 2.1725 },
-        { name: 'Passeig de Gràcia', tip: 'Avenida elegante — Manzana de la Discordia', tags: ['walk'], lat: 41.3916, lng: 2.1649 },
-      ]},
-    ]
-  }
+const D={
+  madrid:{c:'m',col:'#C1440E',center:[40.416,-3.703],zoom:13,secs:[
+    {i:'🏛️',l:'Museos & monumentos',items:[
+      {n:'Museo del Prado',t:'Uno de los mejores del mundo — reserva online',tags:['must'],lat:40.4138,lng:-3.6922},
+      {n:'Museo Reina Sofía',t:'El Guernica de Picasso está aquí',tags:['must'],lat:40.4085,lng:-3.6941},
+      {n:'Palacio Real',t:'La fachada desde Plaza de Oriente es increíble',tags:['walk'],lat:40.4180,lng:-3.7143},
+      {n:'Templo de Debod',t:'Atardecer épico — llega 30 min antes',tags:['night','walk'],lat:40.4236,lng:-3.7188},
+      {n:'Catedral de la Almudena',t:'Sube a la cúpula — vistas 360° gratuitas',tags:['walk'],lat:40.4155,lng:-3.7145},
+    ]},
+    {i:'🚶',l:'Barrios para caminar',items:[
+      {n:'Malasaña',t:'El barrio más joven y alternativo',tags:['walk'],lat:40.4268,lng:-3.7055},
+      {n:'Lavapiés',t:'Multicultural y auténtico, bares pequeños',tags:['walk'],lat:40.4069,lng:-3.7031},
+      {n:'La Latina',t:'Domingos = El Rastro + tapas en Cava Baja',tags:['walk','must'],lat:40.4132,lng:-3.7100},
+      {n:'Chueca',t:'Colorido, animado, buena gastronomía',tags:['walk'],lat:40.4236,lng:-3.6988},
+      {n:'Barrio de las Letras',t:'Donde vivían Lope de Vega y Quevedo',tags:['walk'],lat:40.4145,lng:-3.6972},
+    ]},
+    {i:'🌿',l:'Parques & miradores',items:[
+      {n:'Parque del Retiro',t:'El pulmón de Madrid — gratis y espectacular',tags:['walk','must'],lat:40.4153,lng:-3.6844},
+      {n:'Cerro del Tío Pío',t:'"Las 7 tetas" — el mejor atardecer de la ciudad',tags:['night','walk'],lat:40.3875,lng:-3.6678},
+      {n:'Jardines de Sabatini',t:'Junto al Palacio Real, muy tranquilos',tags:['walk'],lat:40.4192,lng:-3.7143},
+    ]},
+    {i:'🍷',l:'Plazas, mercados & comida',items:[
+      {n:'Plaza Mayor',t:'El corazón histórico de Madrid',tags:['must'],lat:40.4155,lng:-3.7074},
+      {n:'Gran Vía',t:'Arquitectura imponente — camínala de punta a punta',tags:['walk'],lat:40.4200,lng:-3.7025},
+      {n:'Mercado de San Miguel',t:'Ideal para picar de todo',tags:[],lat:40.4151,lng:-3.7087},
+      {n:'Chocolatería San Ginés',t:'Desde 1894 — churros a medianoche son un ritual',tags:['night','must'],lat:40.4153,lng:-3.7079},
+      {n:'Calle Cava Baja',t:'La mejor calle de tapas de Madrid',tags:['must'],lat:40.4127,lng:-3.7090},
+      {n:'El Rastro',t:'Mercadillo dominguero icónico — solo domingos',tags:[],lat:40.4091,lng:-3.7069},
+    ]},
+  ]},
+  barcelona:{c:'b',col:'#1B5EA8',center:[41.392,2.168],zoom:13,secs:[
+    {i:'🏗️',l:'Gaudí & modernismo',items:[
+      {n:'Sagrada Família',t:'Reserva con guía y sube a las torres',tags:['must'],lat:41.4036,lng:2.1744},
+      {n:'Park Güell',t:'Zona monumental con ticket — llega temprano',tags:['must','walk'],lat:41.4145,lng:2.1527},
+      {n:'Casa Batlló',t:'La fachada nocturna es otra dimensión',tags:['night'],lat:41.3916,lng:2.1649},
+      {n:'Casa Milà / La Pedrera',t:'La azotea es de otro planeta',tags:['must'],lat:41.3954,lng:2.1619},
+      {n:'Palau de la Música Catalana',t:'Joya del modernismo — tour o concierto',tags:['must'],lat:41.3875,lng:2.1752},
+    ]},
+    {i:'🚶',l:'Barrios para caminar',items:[
+      {n:'Barrio Gótico',t:'Perderse aquí es el plan — plazas medievales',tags:['walk','must'],lat:41.3832,lng:2.1762},
+      {n:'El Born / Sant Pere',t:'El barrio más cool — tiendas y bares',tags:['walk','must'],lat:41.3851,lng:2.1821},
+      {n:'Gràcia',t:'Bohemio y local — Plaza del Sol y Plaza de la Vila',tags:['walk'],lat:41.4027,lng:2.1565},
+      {n:'El Raval',t:'Arte, diversidad y el MACBA — muy auténtico',tags:['walk'],lat:41.3803,lng:2.1676},
+      {n:'Barceloneta',t:'El barrio de la playa — paseo marítimo',tags:['walk'],lat:41.3796,lng:2.1892},
+    ]},
+    {i:'🌅',l:'Vistas & naturaleza',items:[
+      {n:'Bunkers del Carmel',t:'El mirador secreto — mejor panorámica al atardecer',tags:['must','night','walk'],lat:41.4260,lng:2.1671},
+      {n:'Montjuïc',t:'A pie o cable car — castillo, jardines y mar',tags:['walk'],lat:41.3636,lng:2.1575},
+      {n:'Tibidabo',t:'El parque de atracciones más antiguo de España',tags:[],lat:41.4217,lng:2.1183},
+      {n:'Playa de la Barceloneta',t:'Un baño en el Mediterráneo es obligatorio',tags:['must'],lat:41.3796,lng:2.1908},
+    ]},
+    {i:'🍷',l:'Mercados, bares & comida',items:[
+      {n:'Mercado de La Boqueria',t:'Icónico — ve temprano y compra fruta fresca',tags:[],lat:41.3817,lng:2.1718},
+      {n:'Mercado de Santa Caterina',t:'Más local y auténtico que La Boqueria',tags:['must'],lat:41.3856,lng:2.1787},
+      {n:'El Xampanyet',t:'Bar de cava histórico en El Born',tags:['must','night'],lat:41.3848,lng:2.1826},
+      {n:'Bar Marsella',t:'El bar más antiguo de Barcelona — 1820',tags:['night'],lat:41.3797,lng:2.1725},
+      {n:'Passeig de Gràcia',t:'Avenida elegante con la Manzana de la Discordia',tags:['walk'],lat:41.3916,lng:2.1649},
+    ]},
+  ]}
 };
 
-// State
-let currentCity = 'madrid';
-let checked = { madrid: {}, barcelona: {} };
-let sectionOpen = { madrid: {}, barcelona: {} };
-let map, markersLayer = {};
-let allMarkers = {};
+let city='madrid',chk={madrid:{},barcelona:{}},open={madrid:{},barcelona:{}};
+let map,markers={};
 
-// Init Leaflet map
-function initMap() {
-  map = L.map('map', { zoomControl: false });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap © CARTO',
-    maxZoom: 19
+function initMap(){
+  map=L.map('map',{center:D.madrid.center,zoom:D.madrid.zoom,zoomControl:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:19
   }).addTo(map);
-  L.control.zoom({ position: 'topright' }).addTo(map);
-  renderMarkers();
-  flyToCity('madrid');
+  L.control.zoom({position:'topright'}).addTo(map);
+  addAllMarkers();
 }
 
-function makeIcon(color, done) {
-  const fill = done ? color : '#FFF';
-  const stroke = done ? color : '#999';
-  const inner = done ? '#FFF' : color;
-  return L.divIcon({
-    className: '',
-    html: `<svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg">
-      <path d="M14 1C7.4 1 2 6.4 2 13c0 8.5 12 22 12 22S26 21.5 26 13C26 6.4 20.6 1 14 1z" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
-      <circle cx="14" cy="13" r="5" fill="${inner}" opacity="${done ? 1 : 0.8}"/>
+function pinIcon(col,done){
+  const bg=done?col:'#fff',stroke=done?col:'#aaa',dot=done?'#fff':col;
+  return L.divIcon({className:'',
+    html:`<svg width="26" height="34" viewBox="0 0 26 34" xmlns="http://www.w3.org/2000/svg">
+      <path d="M13 1C7 1 2 6 2 12c0 8 11 21 11 21S24 20 24 12C24 6 19 1 13 1z" fill="${bg}" stroke="${stroke}" stroke-width="1.5"/>
+      <circle cx="13" cy="12" r="4.5" fill="${dot}"/>
     </svg>`,
-    iconSize: [28, 36],
-    iconAnchor: [14, 36],
-    popupAnchor: [0, -36]
+    iconSize:[26,34],iconAnchor:[13,34],popupAnchor:[0,-36]
   });
 }
 
-function renderMarkers() {
-  // Clear old
-  Object.values(allMarkers).forEach(m => map.removeLayer(m));
-  allMarkers = {};
+function tagBadge(t){
+  if(t==='must') return`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:#FDE8E0;color:#A33010;">imprescindible</span>`;
+  if(t==='walk') return`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:#E2F0D4;color:#2E6010;">a pie</span>`;
+  if(t==='night') return`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:#E8E4F8;color:#4030A0;">noche</span>`;
+  return'';
+}
 
-  ['madrid', 'barcelona'].forEach(city => {
-    const cityData = cities[city];
-    cityData.sections.forEach((sec, si) => {
-      sec.items.forEach((item, ii) => {
-        const key = `${city}-${si}-${ii}`;
-        const isDone = !!checked[city][`${si}-${ii}`];
-        const marker = L.marker([item.lat, item.lng], {
-          icon: makeIcon(cityData.color, isDone)
+function popupContent(ct,si,ii){
+  const item=D[ct].secs[si].items[ii];
+  const done=!!chk[ct][`${si}-${ii}`];
+  const cd=D[ct];
+  const tags=item.tags.map(tagBadge).join('');
+  return`<div class="pi">
+    <div class="pn">${item.n}</div>
+    <div class="pt">${item.t}</div>
+    ${tags?`<div class="ptags">${tags}</div>`:''}
+  </div>
+  <button class="pact ${cd.c}${done?' done':''}" onclick="popToggle('${ct}',${si},${ii})">
+    ${done?'✓ Visitado — desmarcar':'Marcar como visitado'}
+  </button>`;
+}
+
+function addAllMarkers(){
+  ['madrid','barcelona'].forEach(ct=>{
+    D[ct].secs.forEach((sec,si)=>{
+      sec.items.forEach((item,ii)=>{
+        const key=`${ct}-${si}-${ii}`;
+        const done=!!chk[ct][`${si}-${ii}`];
+        const mk=L.marker([item.lat,item.lng],{icon:pinIcon(D[ct].col,done)});
+        mk.bindPopup(()=>popupContent(ct,si,ii),{maxWidth:240});
+        mk.on('click',()=>{
+          if(ct!==city)sw(ct);
+          setTimeout(()=>highlight(si,ii),350);
         });
-
-        const tagHtml = item.tags.map(t => {
-          if (t==='must') return '<span style="background:#FDE8E0;color:#A33010;font-size:10px;padding:1px 7px;border-radius:20px;">imprescindible</span>';
-          if (t==='walk') return '<span style="background:#E2F0D4;color:#2E6010;font-size:10px;padding:1px 7px;border-radius:20px;">a pie</span>';
-          if (t==='night') return '<span style="background:#E8E4F8;color:#4030A0;font-size:10px;padding:1px 7px;border-radius:20px;">noche</span>';
-          return '';
-        }).join(' ');
-
-        const actionLabel = isDone ? '✓ Visitado' : 'Marcar como visitado';
-        const popup = L.popup({ maxWidth: 240, minWidth: 200 }).setContent(`
-          <div class="popup-inner">
-            <div class="popup-name">${item.name}</div>
-            <div class="popup-tip">${item.tip}</div>
-            ${tagHtml ? `<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">${tagHtml}</div>` : ''}
-          </div>
-          <button class="popup-action ${city} ${isDone ? 'done' : ''}" onclick="toggleFromMap('${city}',${si},${ii})">${actionLabel}</button>
-        `);
-        marker.bindPopup(popup);
-        marker.on('click', () => highlightSidebarItem(city, si, ii));
-        marker.addTo(map);
-        allMarkers[key] = marker;
+        mk.addTo(map);
+        markers[key]=mk;
       });
     });
   });
 }
 
-function highlightSidebarItem(city, si, ii) {
-  if (city !== currentCity) switchCity(city);
-  document.querySelectorAll('.place-item').forEach(el => el.classList.remove('highlighted'));
-  const el = document.querySelector(`.place-item[data-si="${si}"][data-ii="${ii}"]`);
-  if (el) {
-    el.classList.add('highlighted');
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+function refreshMarker(ct,si,ii){
+  const key=`${ct}-${si}-${ii}`;
+  const done=!!chk[ct][`${si}-${ii}`];
+  if(markers[key]){
+    markers[key].setIcon(pinIcon(D[ct].col,done));
+    if(markers[key].isPopupOpen()) markers[key].setPopupContent(popupContent(ct,si,ii));
   }
 }
 
-function toggleFromMap(city, si, ii) {
-  toggleCheck(city, si, ii);
-  map.closePopup();
-  renderMarkers();
+function popToggle(ct,si,ii){
+  const k=`${si}-${ii}`;
+  chk[ct][k]=!chk[ct][k];
+  refreshMarker(ct,si,ii);
+  if(ct===city){renderList();updateProg();}
 }
 
-function flyToCity(city) {
-  const c = cities[city];
-  map.flyTo(c.center, c.zoom, { duration: 1.2, easeLinearity: 0.5 });
+function toggle(ct,si,ii){
+  const k=`${si}-${ii}`;
+  chk[ct][k]=!chk[ct][k];
+  refreshMarker(ct,si,ii);
+  renderList();updateProg();
 }
 
-function switchCity(city) {
-  currentCity = city;
-  document.querySelectorAll('.city-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.c === city);
-  });
-  document.querySelector('.prog-fill').className = `prog-fill ${city}`;
-  document.getElementById('legend-visited').style.background = cities[city].color;
-  flyToCity(city);
-  renderList();
-  updateProgress();
+function highlight(si,ii){
+  document.querySelectorAll('.row').forEach(r=>r.classList.remove('lit','m','b'));
+  const el=document.querySelector(`.row[data-si="${si}"][data-ii="${ii}"]`);
+  if(el){el.classList.add('lit',D[city].c);el.scrollIntoView({behavior:'smooth',block:'center'});}
 }
 
-function toggleCheck(city, si, ii) {
-  const key = `${si}-${ii}`;
-  checked[city][key] = !checked[city][key];
-  updateProgress();
-  renderList();
-  renderMarkers();
+function sw(ct){
+  city=ct;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.c===ct));
+  document.getElementById('pf').className=`pfill ${D[ct].c}`;
+  document.getElementById('lv').style.background=D[ct].col;
+  map.flyTo(D[ct].center,D[ct].zoom,{duration:1.1,easeLinearity:.5});
+  renderList();updateProg();
 }
 
-function toggleSection(si) {
-  const key = String(si);
-  sectionOpen[currentCity][key] = sectionOpen[currentCity][key] === false ? true : false;
+function toggleSec(si){
+  open[city][si]=open[city][si]===false?true:false;
   renderList();
 }
 
-function updateProgress() {
-  const city = currentCity;
-  const cityData = cities[city];
-  let total = 0, done = 0;
-  cityData.sections.forEach((s, si) => s.items.forEach((_, ii) => {
-    total++;
-    if (checked[city][`${si}-${ii}`]) done++;
-  }));
-  const pct = total ? Math.round(done / total * 100) : 0;
-  document.getElementById('prog-fill').style.width = pct + '%';
-  document.getElementById('prog-label').textContent = `${done} de ${total} lugares visitados`;
-  document.getElementById('prog-pct').textContent = pct + '%';
+function updateProg(){
+  const cd=D[city];let total=0,done=0;
+  cd.secs.forEach((s,si)=>s.items.forEach((_,ii)=>{total++;if(chk[city][`${si}-${ii}`])done++;}));
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('pf').style.width=pct+'%';
+  document.getElementById('plbl').textContent=`${done} de ${total} lugares visitados`;
+  document.getElementById('ppct').textContent=pct+'%';
 }
 
-function renderList() {
-  const city = currentCity;
-  const cityData = cities[city];
-  let html = '';
-  cityData.sections.forEach((sec, si) => {
-    const isOpen = sectionOpen[city][si] !== false;
-    const doneInSec = sec.items.filter((_, ii) => checked[city][`${si}-${ii}`]).length;
-    html += `<div class="section">
-      <div class="sec-head" onclick="toggleSection(${si})">
-        <span class="sec-icon">${sec.icon}</span>
-        <span class="sec-label">${sec.label}</span>
-        <span class="sec-counter">${doneInSec}/${sec.items.length}</span>
-        <span class="sec-toggle ${isOpen ? 'open' : ''}">▶</span>
+function onRow(e,ct,si,ii){
+  const rect=e.currentTarget.getBoundingClientRect();
+  if(e.clientX-rect.left<rect.width*.65){
+    toggle(ct,si,ii);
+  } else {
+    const item=D[ct].secs[si].items[ii];
+    map.flyTo([item.lat,item.lng],17,{duration:.8});
+    setTimeout(()=>{const key=`${ct}-${si}-${ii}`;if(markers[key])markers[key].openPopup();},900);
+  }
+}
+
+function renderList(){
+  const cd=D[city],cc=D[city].c;
+  let html='';
+  cd.secs.forEach((sec,si)=>{
+    const isOpen=open[city][si]!==false;
+    const doneSec=sec.items.filter((_,ii)=>chk[city][`${si}-${ii}`]).length;
+    html+=`<div class="grp">
+      <div class="grp-head" onclick="toggleSec(${si})">
+        <span class="g-ico">${sec.i}</span>
+        <span class="g-lbl">${sec.l}</span>
+        <span class="g-cnt">${doneSec}/${sec.items.length}</span>
+        <span class="g-arr ${isOpen?'open':''}">▶</span>
       </div>
-      <div class="sec-items ${isOpen ? '' : 'closed'}">`;
-    sec.items.forEach((item, ii) => {
-      const isDone = !!checked[city][`${si}-${ii}`];
-      const tagsHtml = item.tags.map(t => {
-        if (t==='must') return '<span class="tag tag-must">imprescindible</span>';
-        if (t==='walk') return '<span class="tag tag-walk">a pie</span>';
-        if (t==='night') return '<span class="tag tag-night">noche</span>';
-        return '';
+      <div class="g-items ${isOpen?'':'hide'}">`;
+    sec.items.forEach((item,ii)=>{
+      const done=!!chk[city][`${si}-${ii}`];
+      const thtml=item.tags.map(t=>{
+        if(t==='must')return'<span class="tag tmu">imprescindible</span>';
+        if(t==='walk')return'<span class="tag twk">a pie</span>';
+        if(t==='night')return'<span class="tag tni">noche</span>';
+        return'';
       }).join('');
-      html += `<div class="place-item ${isDone ? 'done' : ''}" data-city="${city}" data-si="${si}" data-ii="${ii}"
-        onclick="onItemClick(event, '${city}', ${si}, ${ii})">
-        <div class="check">
-          <svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none">
-            <path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div class="place-info">
-          <div class="place-name">${item.name}</div>
-          <div class="place-tip">${item.tip}</div>
-          ${tagsHtml ? `<div class="tags">${tagsHtml}</div>` : ''}
+      html+=`<div class="row${done?' done '+cc:''}" data-si="${si}" data-ii="${ii}" onclick="onRow(event,'${city}',${si},${ii})">
+        <div class="box"><svg class="ck" width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3 5.5L8 1" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="ri">
+          <div class="rn">${item.n}</div>
+          <div class="rt">${item.t}</div>
+          ${thtml?`<div class="tags">${thtml}</div>`:''}
         </div>
       </div>`;
     });
-    html += `</div></div>`;
+    html+=`</div></div>`;
   });
-  document.getElementById('place-list').innerHTML = html;
+  document.getElementById('list').innerHTML=html;
 }
 
-function onItemClick(e, city, si, ii) {
-  // Left half = toggle, right half = fly to
-  const rect = e.currentTarget.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  if (x < rect.width * 0.65) {
-    toggleCheck(city, si, ii);
-  } else {
-    const item = cities[city].sections[si].items[ii];
-    map.flyTo([item.lat, item.lng], 17, { duration: 0.8 });
-    const key = `${city}-${si}-${ii}`;
-    if (allMarkers[key]) allMarkers[key].openPopup();
-  }
-}
-
-// Init
 renderList();
-updateProgress();
-initMap();
+updateProg();
+window.addEventListener('load',initMap);
 </script>
 </body>
 </html>
