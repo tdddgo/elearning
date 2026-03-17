@@ -9,549 +9,479 @@
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:"Montserrat","Segoe UI",sans-serif;background:#f7f5f0;color:#111}
     button{font-family:inherit;cursor:pointer}
-    .tab{background:transparent;border:none;border-bottom:3px solid transparent;padding:10px 14px;font-size:11px;font-weight:600;color:#666;letter-spacing:.04em;white-space:nowrap}
-    .tab.active{color:#fff;border-bottom-color:#E91E8C}
-    .dz{border:2px dashed #ddd;border-radius:12px;padding:20px;text-align:center;cursor:pointer;background:#fff;transition:all .2s}
+    .tab-btn{background:transparent;border:none;border-bottom:3px solid transparent;padding:12px 18px;font-size:12px;font-weight:600;color:#555;letter-spacing:.04em;white-space:nowrap;transition:color .2s}
+    .tab-btn:hover{color:#999}
+    .tab-btn.active{color:#fff;border-bottom-color:#E91E8C}
+    .dz{border:2px dashed #ddd;border-radius:14px;padding:28px 16px;text-align:center;cursor:pointer;background:#fff;transition:all .2s}
     .dz:hover,.dz.drag{border-color:#29ABE2;background:#29ABE210}
-    .dz.done{border-color:#29ABE2;border-style:solid}
-    .dz.err{border-color:#E91E8C}
+    .dz.done{border-color:#29ABE2;border-style:solid;background:#29ABE205}
+    .dz.err{border-color:#E91E8C;background:#E91E8C05}
     input[type=file]{display:none}
-    .card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-    .stat-card{background:#fff;border-radius:12px;padding:14px 13px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-    .alert{border-left:4px solid;border-radius:8px;padding:11px 14px;margin-bottom:8px;display:flex;gap:10px;font-size:12px;line-height:1.6}
-    .alert.red{background:#E91E8C10;border-color:#E91E8C}
-    .alert.orange{background:#F7941D10;border-color:#F7941D}
-    .alert.blue{background:#29ABE210;border-color:#29ABE2}
-    .pill{display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:100px;text-transform:uppercase;letter-spacing:.1em}
-    .rec-card{background:#fff;border-radius:14px;border:1px solid #e8e8e8;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    .card{background:#fff;border-radius:14px;padding:22px 24px;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+    .stat{background:#fff;border-radius:12px;padding:16px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+    .pill{display:inline-block;font-size:9px;font-weight:700;padding:3px 9px;border-radius:100px;text-transform:uppercase;letter-spacing:.1em}
+    .badge-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     ::-webkit-scrollbar{width:4px;height:4px}
     ::-webkit-scrollbar-thumb{background:#ccc;border-radius:2px}
+    @media(max-width:600px){.grid-3{grid-template-columns:1fr!important}}
   </style>
 </head>
 <body>
-<div id="app">
-  <div id="header" style="background:#0a0a0a;padding:0 28px;position:sticky;top:0;z-index:100">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;flex-wrap:wrap;gap:8px">
-      <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:18px;font-weight:700;color:#fff;letter-spacing:.12em">MÁS</span>
-        <div style="width:1px;height:22px;background:#2a2a2a"></div>
+<div id="root">
+  <!-- HEADER -->
+  <div style="background:#0a0a0a;padding:0 40px;position:sticky;top:0;z-index:100">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:22px;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;align-items:center;gap:16px">
+        <span style="font-size:20px;font-weight:700;color:#fff;letter-spacing:.15em">MÁS</span>
+        <div style="width:1px;height:28px;background:#2a2a2a"></div>
         <div>
-          <div style="font-size:9px;color:#555;letter-spacing:.18em;text-transform:uppercase;font-weight:700">Meta Ads Dashboard</div>
-          <div id="header-stats" style="font-size:9px;color:#444;margin-top:1px"></div>
+          <div style="font-size:10px;color:#555;letter-spacing:.18em;text-transform:uppercase;font-weight:700">Meta Ads Dashboard</div>
+          <div id="hstats" style="font-size:10px;color:#444;margin-top:1px"></div>
         </div>
       </div>
-      <div id="obj-legend" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+      <div id="hlegend" style="display:flex;gap:6px;flex-wrap:wrap"></div>
     </div>
-    <div style="display:flex;height:3px;margin-top:12px">
-      <div style="flex:1;background:#E91E8C"></div><div style="flex:1;background:#29ABE2"></div><div style="flex:1;background:#F7941D"></div>
+    <div style="display:flex;height:3px;margin-top:18px">
+      <div style="flex:1;background:#E91E8C"></div>
+      <div style="flex:1;background:#29ABE2"></div>
+      <div style="flex:1;background:#F7941D"></div>
     </div>
     <div id="tabs" style="display:flex;flex-wrap:nowrap;overflow-x:auto"></div>
   </div>
-  <div id="content" style="padding:24px 28px"></div>
+  <div id="page" style="padding:32px 40px;max-width:1100px"></div>
 </div>
 
 <script>
-const C = {pk:"#E91E8C",bl:"#29ABE2",or:"#F7941D",bk:"#0a0a0a",gy:"#888",lg:"#e8e8e8",cr:"#f7f5f0",dk:"#333",wh:"#fff"};
-const OBJ = {
-  leads:{icon:"📋",label:"Formularios/Leads",color:"#E91E8C"},
-  visitas:{icon:"🌐",label:"Visitas",color:"#29ABE2"},
-  clics:{icon:"🖱",label:"Clics",color:"#F7941D"},
-  otro:{icon:"📌",label:"Otro",color:"#888"}
-};
-const fmt = n => Math.round(n).toLocaleString("es-CL");
-const fmtM = n => (n/1000000).toFixed(2)+"M";
-const eff = c => c.gasto>0 ? c.leads/(c.gasto/1000) : 0;
+const PK="#E91E8C",BL="#29ABE2",OR="#F7941D",BK="#0a0a0a",GY="#888",LG="#e8e8e8",CR="#f7f5f0",DK="#333",WH="#fff";
+const OBJ={leads:{icon:"📋",label:"Formularios/Leads",color:PK},visitas:{icon:"🌐",label:"Visitas",color:BL},clics:{icon:"🖱",label:"Clics",color:OR},otro:{icon:"📌",label:"Otro",color:GY}};
+const fmt=n=>Math.round(n).toLocaleString("es-CL");
+const fmtM=n=>(n/1e6).toFixed(2)+"M";
+const eff=c=>c.gasto>0?c.leads/(c.gasto/1000):0;
 
-let state = {
-  tab:"upload", data:{camps:[],sets:[],ads:[]},
-  fs:{c:"",s:"",a:""}, expanded:null,
-  objFilter:{ov:"all",w:"all"}, analSub:"resumen"
-};
+let S={tab:"upload",data:{camps:[],sets:[],ads:[]},fs:{c:"",s:"",a:""},exp:null,of:{ov:"all",w:"all",adv:"all"}};
 
-function parseCSV(text) {
-  const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length < 2) return [];
-  const hdrs = lines[0].split(",").map(h => h.replace(/^"|"$/g,"").trim());
-  return lines.slice(1).map(line => {
-    const vals = []; let cur = "", inQ = false;
-    for (let ch of line) {
-      if (ch==='"') inQ=!inQ;
-      else if (ch===','&&!inQ) {vals.push(cur);cur="";}
-      else cur+=ch;
-    }
+/* ── CSV ── */
+function parseCSV(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2)return[];
+  const hdrs=lines[0].split(",").map(h=>h.replace(/^"|"$/g,"").trim());
+  return lines.slice(1).map(line=>{
+    const vals=[];let cur="",inQ=false;
+    for(let ch of line){if(ch==='"')inQ=!inQ;else if(ch===","&&!inQ){vals.push(cur);cur="";}else cur+=ch;}
     vals.push(cur);
-    const obj = {}; hdrs.forEach((h,i)=>{obj[h]=(vals[i]||"").trim();}); return obj;
+    const obj={};hdrs.forEach((h,i)=>{obj[h]=(vals[i]||"").trim();});return obj;
   });
 }
+function dObj(r){
+  const ind=(r["Indicador de resultado"]||"").toLowerCase();
+  const nm=(r["Nombre de la campaña"]||r["Nombre del conjunto de anuncios"]||r["Nombre del anuncio"]||"").toLowerCase();
+  if(/leadgen|lead/.test(ind))return"leads";
+  if(/landing|visit|destino/.test(ind))return"visitas";
+  if(/click|clic/.test(ind))return"clics";
+  if(/conv/.test(nm))return"leads";
+  return"otro";
+}
+const parseCamps=rows=>rows.filter(r=>r["Nombre de la campaña"]).map(r=>({nombre:r["Nombre de la campaña"],leads:+r["Resultados"]||0,cpl:+r["Costo por resultados"]||0,gasto:+r["Importe gastado (CLP)"]||0,alcance:+r["Alcance"]||0,frecuencia:+r["Frecuencia"]||0,objetivo:dObj(r)})).filter(r=>r.gasto>0).sort((a,b)=>b.cpl-a.cpl);
+const parseSets=rows=>rows.filter(r=>r["Nombre del conjunto de anuncios"]).map(r=>({nombre:r["Nombre del conjunto de anuncios"],leads:+r["Resultados"]||0,cpl:+r["Costo por resultados"]||0,gasto:+r["Importe gastado (CLP)"]||0,alcance:+r["Alcance"]||0,frecuencia:+r["Frecuencia"]||0,objetivo:dObj(r)})).filter(r=>r.gasto>0);
+const parseAds=rows=>rows.filter(r=>r["Nombre del anuncio"]).map(r=>({nombre:r["Nombre del anuncio"],leads:+r["Resultados"]||0,cpl:+r["Costo por resultados"]||0,gasto:+r["Importe gastado (CLP)"]||0,alcance:+r["Alcance"]||0,conjunto:r["Nombre del conjunto de anuncios"]||"",calidad:r["Clasificación de calidad"]||"-",conversion:r["Clasificación del porcentaje de conversiones"]||"-",objetivo:dObj(r)})).filter(r=>r.gasto>0);
 
-function detectObj(r) {
-  const ind = (r["Indicador de resultado"]||"").toLowerCase();
-  const nm = (r["Nombre de la campaña"]||r["Nombre del conjunto de anuncios"]||r["Nombre del anuncio"]||"").toLowerCase();
-  if (/leadgen|lead/.test(ind)) return "leads";
-  if (/landing|visit|destino/.test(ind)) return "visitas";
-  if (/click|clic/.test(ind)) return "clics";
-  if (/conv/.test(nm)) return "leads";
-  return "otro";
-}
-
-function parseCamps(rows) {
-  return rows.filter(r=>r["Nombre de la campaña"])
-    .map(r=>({nombre:r["Nombre de la campaña"],leads:+r["Resultados"]||0,cpl:+r["Costo por resultados"]||0,
-      gasto:+r["Importe gastado (CLP)"]||0,alcance:+r["Alcance"]||0,frecuencia:+r["Frecuencia"]||0,objetivo:detectObj(r)}))
-    .filter(r=>r.gasto>0).sort((a,b)=>b.cpl-a.cpl);
-}
-function parseSets(rows) {
-  return rows.filter(r=>r["Nombre del conjunto de anuncios"])
-    .map(r=>({nombre:r["Nombre del conjunto de anuncios"],leads:+r["Resultados"]||0,cpl:+r["Costo por resultados"]||0,
-      gasto:+r["Importe gastado (CLP)"]||0,alcance:+r["Alcance"]||0,frecuencia:+r["Frecuencia"]||0,objetivo:detectObj(r)}))
-    .filter(r=>r.gasto>0);
-}
-function parseAds(rows) {
-  return rows.filter(r=>r["Nombre del anuncio"])
-    .map(r=>({nombre:r["Nombre del anuncio"],leads:+r["Resultados"]||0,cpl:+r["Costo por resultados"]||0,
-      gasto:+r["Importe gastado (CLP)"]||0,alcance:+r["Alcance"]||0,
-      conjunto:r["Nombre del conjunto de anuncios"]||"",
-      calidad:r["Clasificación de calidad"]||"-",
-      conversion:r["Clasificación del porcentaje de conversiones"]||"-",
-      objetivo:detectObj(r)}))
-    .filter(r=>r.gasto>0);
-}
-
-function h(tag, attrs) {
-  const el = document.createElement(tag);
-  const children = Array.from(arguments).slice(2);
-  if (attrs) Object.entries(attrs).forEach(([k,v]) => {
-    if (k==="style"&&typeof v==="object") Object.assign(el.style, v);
-    else if (k.startsWith("on")) el.addEventListener(k.slice(2).toLowerCase(), v);
-    else if (k==="className") el.className = v;
-    else el.setAttribute(k, v);
+/* ── DOM HELPERS ── */
+function el(tag,attrs,...kids){
+  const e=document.createElement(tag);
+  if(attrs)Object.entries(attrs).forEach(([k,v])=>{
+    if(k==="style"&&typeof v==="object")Object.assign(e.style,v);
+    else if(k.startsWith("on"))e.addEventListener(k.slice(2).toLowerCase(),v);
+    else if(k==="cls")e.className=v;
+    else e.setAttribute(k,v);
   });
-  children.forEach(c => {
-    if (c==null||c===false) return;
-    el.appendChild(typeof c==="string"||typeof c==="number" ? document.createTextNode(c) : c);
-  });
-  return el;
+  kids.forEach(c=>{if(c==null||c===false)return;e.appendChild(typeof c==="string"||typeof c==="number"?document.createTextNode(""+c):c);});
+  return e;
 }
+function div(attrs,...kids){return el("div",attrs,...kids);}
+function span(attrs,...kids){return el("span",attrs,...kids);}
+function btn(attrs,...kids){return el("button",attrs,...kids);}
 
-function statCard(label, value, sub, accent) {
-  return h("div", {className:"stat-card", style:{borderTop:"4px solid "+(accent||"#0a0a0a")}},
-    h("div", {style:{fontSize:9,color:"#888",letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700,marginBottom:6}}, label),
-    h("div", {style:{fontSize:19,fontWeight:700,color:(accent&&accent!=="#0a0a0a")?accent:"#0a0a0a"}}, ""+value),
-    sub ? h("div", {style:{fontSize:9,color:"#888",marginTop:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}, sub) : null
+function statCard(label,value,sub,accent){
+  const ac=accent||BK;
+  return div({cls:"stat",style:{borderTop:`4px solid ${ac}`}},
+    div({style:{fontSize:9,color:GY,letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700,marginBottom:7}},label),
+    div({style:{fontSize:20,fontWeight:700,color:ac===BK?BK:ac}},""+value),
+    sub?div({style:{fontSize:9,color:GY,marginTop:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},sub):null
   );
 }
 
-function alertEl(type, icon, msg) {
-  return h("div", {className:"alert "+type},
-    h("span", {style:{fontSize:14,flexShrink:0}}, icon),
-    h("span", {}, msg)
-  );
+function pill(text,color){
+  return span({cls:"pill",style:{background:color+"18",color}},text);
 }
 
-function makeObjFilter(active, filterKey) {
-  const campObjs = [...new Set(state.data.camps.map(c=>c.objetivo))];
-  if (campObjs.length <= 1) return null;
-  const fbar = h("div",{style:{display:"flex",gap:7,flexWrap:"wrap",marginBottom:14}});
-  const allBtn = h("button",{style:{background:active==="all"?"#0a0a0a":"transparent",color:active==="all"?"#fff":"#888",border:"1.5px solid "+(active==="all"?"#0a0a0a":"#e8e8e8"),borderRadius:100,padding:"5px 13px",fontSize:11,fontWeight:600}}, "Todos");
-  allBtn.addEventListener("click",()=>{state.objFilter[filterKey]="all";render();});
-  fbar.appendChild(allBtn);
-  campObjs.forEach(o=>{
-    const m=OBJ[o]||OBJ.otro; const act=active===o;
-    const btn=h("button",{style:{background:act?m.color:"transparent",color:act?"#fff":"#888",border:"1.5px solid "+(act?m.color:"#e8e8e8"),borderRadius:100,padding:"5px 13px",fontSize:11,fontWeight:600}}, m.icon+" "+m.label);
-    btn.addEventListener("click",()=>{state.objFilter[filterKey]=o;render();});
-    fbar.appendChild(btn);
-  });
-  return fbar;
+function scoreBadge(val){
+  if(!val||val==="-")return span({style:{color:"#ccc",fontSize:11}},"—");
+  const up=/encima|above/i.test(val),dn=/abajo|below/i.test(val);
+  const col=up?BL:dn?PK:OR;
+  const lbl=up?"↑ Encima":dn?(val.includes("35")?"↓ -35%":"↓ -20%"):"→ Prom.";
+  return span({style:{background:col+"18",color:col,fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:100,fontFamily:"monospace"}},lbl);
 }
 
-function uploadZone(label, icon, desc, key, parserFn) {
-  const wrap = h("div", {className:"dz"+(state.fs[key]==="ok"?" done":state.fs[key]==="err"?" err":"")});
-  const input = h("input", {type:"file", accept:".csv"});
-  wrap.appendChild(input);
-  wrap.appendChild(h("div", {style:{fontSize:20,marginBottom:6}}, state.fs[key]==="ok"?"✅":state.fs[key]==="err"?"❌":icon));
-  wrap.appendChild(h("div", {style:{fontSize:12,fontWeight:700,color:state.fs[key]==="ok"?"#29ABE2":"#0a0a0a",marginBottom:3}}, label));
-  wrap.appendChild(h("div", {style:{fontSize:11,color:"#888",lineHeight:1.4}}, state.fs[key]==="ok"?"Cargado · clic para reemplazar":desc));
-  const handle = file => {
-    if (!file||!file.name.endsWith(".csv")) {state.fs[key]="err";render();return;}
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        state.data[key==="c"?"camps":key==="s"?"sets":"ads"] = parserFn(parseCSV(e.target.result));
-        state.fs[key]="ok"; render();
-      } catch { state.fs[key]="err"; render(); }
-    };
-    reader.readAsText(file);
+function uploadZone(label,icon,desc,key,parser){
+  const wrap=el("div",{cls:"dz"+(S.fs[key]==="ok"?" done":S.fs[key]==="err"?" err":"")});
+  const inp=el("input",{type:"file",accept:".csv"});
+  wrap.appendChild(inp);
+  wrap.appendChild(div({style:{fontSize:22,marginBottom:8}},S.fs[key]==="ok"?"✅":S.fs[key]==="err"?"❌":icon));
+  wrap.appendChild(div({style:{fontSize:13,fontWeight:700,color:S.fs[key]==="ok"?BL:BK,marginBottom:5}},label));
+  wrap.appendChild(div({style:{fontSize:11,color:GY,lineHeight:1.5}},S.fs[key]==="ok"?"Cargado · clic para reemplazar":desc));
+  const handle=f=>{
+    if(!f||!f.name.endsWith(".csv")){S.fs[key]="err";render();return;}
+    const r=new FileReader();
+    r.onload=e=>{try{S.data[key==="c"?"camps":key==="s"?"sets":"ads"]=parser(parseCSV(e.target.result));S.fs[key]="ok";render();}catch{S.fs[key]="err";render();}};
+    r.readAsText(f);
   };
-  input.addEventListener("change", e=>handle(e.target.files[0]));
-  wrap.addEventListener("dragover", e=>{e.preventDefault();wrap.classList.add("drag");});
-  wrap.addEventListener("dragleave", ()=>wrap.classList.remove("drag"));
-  wrap.addEventListener("drop", e=>{e.preventDefault();wrap.classList.remove("drag");handle(e.dataTransfer.files[0]);});
-  wrap.addEventListener("click", ()=>input.click());
+  inp.addEventListener("change",e=>handle(e.target.files[0]));
+  wrap.addEventListener("dragover",e=>{e.preventDefault();wrap.classList.add("drag");});
+  wrap.addEventListener("dragleave",()=>wrap.classList.remove("drag"));
+  wrap.addEventListener("drop",e=>{e.preventDefault();wrap.classList.remove("drag");handle(e.dataTransfer.files[0]);});
+  wrap.addEventListener("click",()=>inp.click());
   return wrap;
 }
 
-function getStats(camps) {
+function objFilter(active,key){
+  const objs=[...new Set(S.data.camps.map(c=>c.objetivo))];
+  if(objs.length<=1)return null;
+  const bar=div({style:{display:"flex",gap:8,flexWrap:"wrap",marginBottom:20}});
+  const ab=btn({style:{background:active==="all"?BK:"transparent",color:active==="all"?WH:GY,border:`1.5px solid ${active==="all"?BK:LG}`,borderRadius:100,padding:"7px 16px",fontSize:12,fontWeight:600}},"Todos");
+  ab.addEventListener("click",()=>{S.of[key]="all";render();});
+  bar.appendChild(ab);
+  objs.forEach(o=>{
+    const m=OBJ[o]||OBJ.otro,act=active===o;
+    const b=btn({style:{background:act?m.color:"transparent",color:act?WH:GY,border:`1.5px solid ${act?m.color:LG}`,borderRadius:100,padding:"7px 16px",fontSize:12,fontWeight:600,display:"flex",alignItems:"center",gap:6}},span({style:{fontSize:13}},m.icon),m.label);
+    b.addEventListener("click",()=>{S.of[key]=o;render();});
+    bar.appendChild(b);
+  });
+  return bar;
+}
+
+function emptyState(msg){
+  const wrap=div({cls:"card",style:{textAlign:"center",padding:"56px 32px"}});
+  wrap.appendChild(div({style:{fontSize:36,marginBottom:14}},"📂"));
+  wrap.appendChild(div({style:{fontSize:16,fontWeight:700,marginBottom:8}},"Sin datos cargados"));
+  wrap.appendChild(div({style:{fontSize:14,color:GY,marginBottom:22}},msg||"Importa tus reportes de Meta Ads para ver el análisis."));
+  const b=btn({style:{background:BK,color:WH,border:"none",borderRadius:8,padding:"11px 24px",fontSize:13,fontWeight:700}},"Ir a Importar →");
+  b.addEventListener("click",()=>{S.tab="upload";render();});
+  wrap.appendChild(b);
+  return wrap;
+}
+
+function getStats(camps){
   const tG=camps.reduce((a,c)=>a+c.gasto,0);
   const tL=camps.reduce((a,c)=>a+c.leads,0);
   const avg=tL>0?tG/tL:0;
   const cwl=camps.filter(c=>c.leads>0).sort((a,b)=>a.cpl-b.cpl);
-  return {tG,tL,avg,cwl,best:cwl[0],worst:cwl[cwl.length-1]};
+  return{tG,tL,avg,cwl,best:cwl[0],worst:cwl[cwl.length-1]};
 }
 
-function emptyState() {
-  const el=h("div",{className:"card",style:{textAlign:"center",padding:"48px 32px"}});
-  el.appendChild(h("div",{style:{fontSize:32,marginBottom:12}},"📂"));
-  el.appendChild(h("div",{style:{fontSize:16,fontWeight:700,marginBottom:8}},"Sin datos cargados"));
-  el.appendChild(h("div",{style:{fontSize:13,color:"#888",marginBottom:20}},"Importa tus reportes de Meta Ads."));
-  const btn=h("button",{style:{background:"#0a0a0a",color:"#fff",border:"none",borderRadius:8,padding:"10px 20px",fontSize:13,fontWeight:700}},"Ir a Importar →");
-  btn.addEventListener("click",()=>{state.tab="upload";render();});
-  el.appendChild(btn); return el;
-}
+/* ── TABS ── */
+function renderUpload(){
+  const {camps}=S.data;
+  const objs=[...new Set(camps.map(c=>c.objetivo))];
+  const pg=div({style:{maxWidth:820}});
+  pg.appendChild(el("h2",{style:{fontSize:22,fontWeight:700,marginBottom:8}},"Importar reportes de Meta Ads"));
+  pg.appendChild(el("p",{style:{fontSize:14,color:GY,lineHeight:1.7,marginBottom:24}},"Exporta los reportes desde Meta Ads Manager en CSV. El dashboard detecta automáticamente el objetivo de cada campaña y te permite filtrar por tipo."));
+  const g=div({style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))",gap:14,marginBottom:28}});
+  g.appendChild(uploadZone("Campañas","📊","Vista Campañas · Exportar → CSV","c",parseCamps));
+  g.appendChild(uploadZone("Conjuntos de anuncios","🗂","Vista Conjuntos · Exportar → CSV","s",parseSets));
+  g.appendChild(uploadZone("Anuncios","🎨","Vista Anuncios · Exportar → CSV","a",parseAds));
+  pg.appendChild(g);
 
-function renderUpload() {
-  const div=h("div",{style:{maxWidth:780,margin:"0 auto"}});
-  div.appendChild(h("h2",{style:{fontSize:19,fontWeight:700,marginBottom:7}},"Importar reportes"));
-  div.appendChild(h("p",{style:{fontSize:13,color:"#888",lineHeight:1.7,marginBottom:20}},"Exporta los reportes desde Meta Ads Manager en CSV. El dashboard detecta automáticamente el objetivo de cada campaña."));
-  const grid=h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(195px,1fr))",gap:11,marginBottom:20}});
-  grid.appendChild(uploadZone("Campañas","📊","Vista Campañas → Exportar → CSV","c",parseCamps));
-  grid.appendChild(uploadZone("Conjuntos","🗂","Vista Conjuntos → Exportar → CSV","s",parseSets));
-  grid.appendChild(uploadZone("Anuncios","🎨","Vista Anuncios → Exportar → CSV","a",parseAds));
-  div.appendChild(grid);
-  const camps=state.data.camps;
   if(camps.length>0){
-    const card=h("div",{className:"card",style:{marginBottom:14}});
-    card.appendChild(h("div",{style:{fontSize:12,fontWeight:700,marginBottom:12}},"Objetivos detectados"));
-    const og=h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(165px,1fr))",gap:9}});
-    [...new Set(camps.map(c=>c.objetivo))].forEach(o=>{
-      const m=OBJ[o]||OBJ.otro;const cs=camps.filter(c=>c.objetivo===o);
-      const item=h("div",{style:{background:"#f7f5f0",borderRadius:9,padding:"12px",borderLeft:"4px solid "+m.color}});
-      item.appendChild(h("div",{style:{fontSize:14,marginBottom:4}},m.icon));
-      item.appendChild(h("div",{style:{fontSize:11,fontWeight:700,color:m.color,marginBottom:5}},m.label));
-      item.appendChild(h("div",{style:{fontSize:10,color:"#888"}},cs.length+" campañas · "+cs.reduce((a,c)=>a+c.leads,0)+" leads · CLP "+fmt(cs.reduce((a,c)=>a+c.gasto,0))));
+    const card=div({cls:"card",style:{marginBottom:18}});
+    card.appendChild(div({style:{fontSize:14,fontWeight:700,marginBottom:16}},"Objetivos detectados en tus campañas"));
+    const og=div({style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12,marginBottom:16}});
+    objs.forEach(o=>{
+      const m=OBJ[o]||OBJ.otro,cs=camps.filter(c=>c.objetivo===o);
+      const item=div({style:{background:CR,borderRadius:12,padding:"16px",borderLeft:`4px solid ${m.color}`}});
+      item.appendChild(div({style:{fontSize:18,marginBottom:6}},m.icon));
+      item.appendChild(div({style:{fontSize:13,fontWeight:700,color:m.color,marginBottom:8}},m.label));
+      item.appendChild(div({style:{fontSize:12,color:GY}},cs.length+" campañas"));
+      item.appendChild(div({style:{fontSize:12,color:GY}},cs.reduce((a,c)=>a+c.leads,0)+" leads"));
+      item.appendChild(div({style:{fontSize:12,color:GY}},"CLP "+fmt(cs.reduce((a,c)=>a+c.gasto,0))));
       og.appendChild(item);
     });
-    card.appendChild(og); div.appendChild(card);
+    card.appendChild(og);
+    card.appendChild(div({style:{background:BL+"10",border:`1px solid ${BL}20`,borderLeft:`4px solid ${BL}`,borderRadius:10,padding:"13px 16px"}},
+      div({style:{fontSize:10,color:BL,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:6}},"💡 Filtros por objetivo"),
+      el("p",{style:{margin:0,fontSize:13,color:DK,lineHeight:1.6}},"En cada pestaña puedes filtrar por objetivo para que el CPL promedio y los rankings sean comparables entre sí.")
+    ));
+    pg.appendChild(card);
   }
-  if(state.fs.c==="ok"||state.fs.s==="ok"||state.fs.a==="ok"){
-    const bar=h("div",{style:{background:"#0a0a0a",borderRadius:12,padding:"13px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}});
-    bar.appendChild(h("div",{},h("div",{style:{fontSize:12,fontWeight:700,color:"#fff"}},"Datos cargados"),h("div",{style:{fontSize:10,color:"#555",marginTop:2}},state.data.camps.length+" campañas · "+state.data.sets.length+" conjuntos · "+state.data.ads.length+" anuncios")));
-    const btn=h("button",{style:{background:"#E91E8C",color:"#fff",border:"none",borderRadius:8,padding:"8px 18px",fontSize:12,fontWeight:700}},"Ver Panorama →");
-    btn.addEventListener("click",()=>{state.tab="ov";render();});
-    bar.appendChild(btn); div.appendChild(bar);
+
+  const allLoaded=S.fs.c==="ok"||S.fs.s==="ok"||S.fs.a==="ok";
+  if(allLoaded){
+    const bar=div({style:{background:BK,borderRadius:12,padding:"16px 22px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}});
+    bar.appendChild(div({},div({style:{fontSize:13,fontWeight:700,color:WH}},"¡Datos cargados! Tu dashboard está listo."),div({style:{fontSize:11,color:"#555",marginTop:2}},S.data.camps.length+" campañas · "+S.data.sets.length+" conjuntos · "+S.data.ads.length+" anuncios")));
+    const b=btn({style:{background:PK,color:WH,border:"none",borderRadius:8,padding:"10px 22px",fontSize:13,fontWeight:700}},"Ver Panorama →");
+    b.addEventListener("click",()=>{S.tab="ov";render();});
+    bar.appendChild(b);
+    pg.appendChild(bar);
   }
-  return div;
+  return pg;
 }
 
-function renderPanorama() {
-  const fCamps=state.objFilter.ov==="all"?state.data.camps:state.data.camps.filter(c=>c.objetivo===state.objFilter.ov);
-  const {tG,tL,avg,cwl,best,worst}=getStats(fCamps);
+function renderPanorama(){
+  const fCamps=S.of.ov==="all"?S.data.camps:S.data.camps.filter(c=>c.objetivo===S.of.ov);
+  const{tG,tL,avg,cwl,best,worst}=getStats(fCamps);
   const critW=cwl.filter(c=>c.cpl>avg*2);
-  const div=h("div",{});
-  const of=makeObjFilter(state.objFilter.ov,"ov");
-  if(of) div.appendChild(of);
-  const sg=h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(135px,1fr))",gap:10,marginBottom:20}});
-  [["Gasto total","CLP "+fmtM(tG),null,"#0a0a0a"],["Total leads",tL,null,"#29ABE2"],["CPL promedio","$"+fmt(avg),null,"#29ABE2"],
-   ["Mejor CPL",best?"$"+fmt(best.cpl):"—",best?.nombre?.slice(0,20),"#29ABE2"],
-   ["Peor CPL",worst?"$"+fmt(worst.cpl):"—",worst?.nombre?.slice(0,20),"#E91E8C"],
-   ["Campañas críticas",critW.length,"CPL > 2x promedio",critW.length>0?"#F7941D":"#29ABE2"]
-  ].forEach(([l,v,s,ac])=>sg.appendChild(statCard(l,v,s,ac)));
-  div.appendChild(sg);
-  const card=h("div",{className:"card",style:{marginBottom:14}});
-  const hdr=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}});
-  hdr.appendChild(h("div",{},h("div",{style:{fontSize:13,fontWeight:700}},"Ranking por CPL"),h("div",{style:{fontSize:11,color:"#888",marginTop:2}},"CPL promedio: $"+fmt(avg))));
-  const leg=h("div",{style:{display:"flex",gap:10}});
-  [["#E91E8C","Crítico"],["#F7941D","Atención"],["#29ABE2","Óptimo"]].forEach(([col,lbl])=>{
-    const item=h("div",{style:{display:"flex",alignItems:"center",gap:5}});
-    item.appendChild(h("div",{style:{width:7,height:7,borderRadius:"50%",background:col}}));
-    item.appendChild(h("span",{style:{fontSize:10,color:"#888",fontWeight:600}},lbl));
-    leg.appendChild(item);
-  });
-  hdr.appendChild(leg); card.appendChild(hdr);
+  const pg=div({});
+  const of=objFilter(S.of.ov,"ov");if(of)pg.appendChild(of);
+
+  // stat cards
+  const sg=div({style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:13,marginBottom:32}});
+  [[" Gasto total","CLP "+fmtM(tG),null,BK],["Total leads",""+tL,null,BL],["CPL promedio","$"+fmt(avg),null,BL],["Mejor CPL",best?"$"+fmt(best.cpl):"—",best?.nombre?.slice(0,22),BL],["Peor CPL",worst?"$"+fmt(worst.cpl):"—",worst?.nombre?.slice(0,22),PK],["Campañas críticas",""+critW.length,"CPL > 2x promedio",critW.length>0?OR:BL]].forEach(([l,v,s,ac])=>sg.appendChild(statCard(l,v,s,ac)));
+  pg.appendChild(sg);
+
+  // ranking
+  const card=div({cls:"card",style:{marginBottom:20}});
+  const hdr=div({style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22,flexWrap:"wrap",gap:12}});
+  hdr.appendChild(div({},div({style:{fontSize:16,fontWeight:700}},"Ranking de campañas por CPL"),div({style:{fontSize:12,color:GY,marginTop:3}},"CPL promedio del filtro: $"+fmt(avg))));
+  const leg=div({style:{display:"flex",gap:14}});
+  [[PK,"Crítico"],[OR,"Atención"],[BL,"Óptimo"]].forEach(([col,lbl])=>leg.appendChild(div({style:{display:"flex",alignItems:"center",gap:6}},div({style:{width:8,height:8,borderRadius:"50%",background:col}}),span({style:{fontSize:11,color:GY,fontWeight:600}},lbl))));
+  hdr.appendChild(leg);card.appendChild(hdr);
   cwl.forEach((c,i)=>{
-    const col=c.cpl>avg*2?"#E91E8C":c.cpl>avg*1.5?"#F7941D":c.cpl<avg*.7?"#29ABE2":"#888";
-    const pct=cwl.length>0?(c.cpl/cwl[cwl.length-1].cpl)*100:0;
-    const row=h("div",{style:{display:"grid",gridTemplateColumns:"20px 15px 1fr 1fr",gap:10,alignItems:"center",marginBottom:10}});
-    const num=h("div",{style:{width:19,height:19,borderRadius:5,background:c.cpl>avg*2?"#E91E8C":c.cpl<avg*.7?"#29ABE2":"#e8e8e8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:c.cpl>avg*2||c.cpl<avg*.7?"#fff":"#888"}},""+( i+1));
+    const col=c.cpl>avg*2?PK:c.cpl>avg*1.5?OR:c.cpl<avg*.7?BL:GY;
+    const pct=cwl[cwl.length-1]?.cpl>0?(c.cpl/cwl[cwl.length-1].cpl)*100:0;
     const m=OBJ[c.objetivo]||OBJ.otro;
-    const info=h("div",{},h("div",{style:{fontSize:11,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},c.nombre),h("div",{style:{fontSize:9,color:"#888",marginTop:1}},c.leads+" leads · frec. "+c.frecuencia.toFixed(1)+"x"));
-    const bw=h("div",{style:{display:"flex",alignItems:"center",gap:8}});
-    const bg=h("div",{style:{flex:1,height:3,background:"#e8e8e8",borderRadius:2}});
-    bg.appendChild(h("div",{style:{width:pct+"%",height:"100%",background:col,borderRadius:2}}));
-    bw.appendChild(bg);
-    bw.appendChild(h("span",{style:{fontSize:12,fontWeight:700,color:col,minWidth:80,textAlign:"right",fontFamily:"monospace"}},"$"+fmt(c.cpl)));
-    row.appendChild(num); row.appendChild(h("span",{style:{fontSize:12}},m.icon)); row.appendChild(info); row.appendChild(bw);
+    const row=div({style:{display:"grid",gridTemplateColumns:"26px 18px 1fr 1fr",gap:12,alignItems:"center",marginBottom:13}});
+    const nb=div({style:{width:24,height:24,borderRadius:6,background:c.cpl>avg*2?PK:c.cpl<avg*.7?BL:LG,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:c.cpl>avg*2||c.cpl<avg*.7?WH:GY}},""+( i+1));
+    const ic=span({style:{fontSize:13},title:m.label},m.icon);
+    const info=div({},div({style:{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},c.nombre),div({style:{fontSize:11,color:GY,marginTop:2}},c.leads+" leads · frec. "+c.frecuencia.toFixed(1)+"×"));
+    const bw=div({style:{display:"flex",alignItems:"center",gap:12}});
+    const bg=div({style:{flex:1,height:3,background:LG,borderRadius:2}});
+    bg.appendChild(div({style:{width:pct+"%",height:"100%",background:col,borderRadius:2}}));
+    bw.appendChild(bg);bw.appendChild(span({style:{fontSize:13,fontWeight:700,color:col,minWidth:85,textAlign:"right",fontFamily:"monospace"}},"$"+fmt(c.cpl)));
+    row.appendChild(nb);row.appendChild(ic);row.appendChild(info);row.appendChild(bw);
     card.appendChild(row);
   });
-  div.appendChild(card);
-  if(best) div.appendChild(h("div",{style:{background:"#29ABE210",border:"1.5px solid #29ABE225",borderLeft:"4px solid #29ABE2",borderRadius:10,padding:"12px 16px"}},
-    h("div",{style:{fontSize:9,color:"#29ABE2",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:5}},"💡 Insight"),
-    h("p",{style:{margin:0,fontSize:12,color:"#333",lineHeight:1.7}},best.nombre+" es la más eficiente con $"+fmt(best.cpl)+"/lead"+(worst?" — "+Math.round(worst.cpl/best.cpl)+"x más eficiente que "+worst.nombre.slice(0,30):"")+".")
-  ));
-  return div;
+  pg.appendChild(card);
+  if(best)pg.appendChild(div({style:{background:BL+"10",border:`1.5px solid ${BL}25`,borderLeft:`4px solid ${BL}`,borderRadius:12,padding:"18px 22px"}},div({style:{fontSize:11,color:BL,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:8}},"💡 Insight"),el("p",{style:{margin:0,fontSize:14,color:DK,lineHeight:1.7}},best.nombre+" tiene el CPL más eficiente con $"+fmt(best.cpl)+"/lead"+(worst?" — "+Math.round(worst.cpl/best.cpl)+"× más eficiente que "+worst.nombre.slice(0,30):"")+".")));
+  return pg;
 }
 
-function renderAnalisis() {
-  const {camps,sets,ads}=state.data;
-  const {tG,tL,avg,cwl,best,worst}=getStats(camps);
-  const criticals=cwl.filter(c=>c.cpl>avg*2);
-  const noLeads=camps.filter(c=>c.gasto>5000&&c.leads===0);
-  const saturated=camps.filter(c=>c.frecuencia>4&&c.leads>0);
-  const smallAud=camps.filter(c=>c.alcance>0&&c.alcance<12000&&c.leads>0);
+function renderCreativos(){
+  const{ads}=S.data;
+  if(!ads.length)return emptyState("Carga el reporte de Anuncios para ver el análisis de creativos.");
+  const topAds=[...ads].filter(a=>a.leads>0).sort((a,b)=>a.cpl-b.cpl).slice(0,6);
+  const worstAds=[...ads].filter(a=>a.leads>0).sort((a,b)=>b.cpl-a.cpl).slice(0,5);
   const funnelAds=ads.filter(a=>/encima|above/i.test(a.calidad)&&/abajo|below/i.test(a.conversion)&&a.leads>0);
-  const effRank=[...cwl].sort((a,b)=>eff(b)-eff(a));
-  const maxEff=effRank.length?eff(effRank[0]):1;
-  const topAds=[...ads].filter(a=>a.leads>=2).sort((a,b)=>a.cpl-b.cpl).slice(0,8);
-  const worstAds=[...ads].filter(a=>a.leads>0).sort((a,b)=>b.cpl-a.cpl).slice(0,6);
-  const div=h("div",{});
-  const subs=[{id:"resumen",lbl:"Resumen"},{id:"eficiencia",lbl:"Eficiencia"},{id:"graficos",lbl:"Gráficos"},{id:"creativos",lbl:"Creativos"}];
-  const subbar=h("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}});
-  subs.forEach(s=>{
-    const btn=h("button",{style:{background:state.analSub===s.id?"#0a0a0a":"transparent",color:state.analSub===s.id?"#fff":"#888",border:"1.5px solid "+(state.analSub===s.id?"#0a0a0a":"#e8e8e8"),borderRadius:100,padding:"5px 13px",fontSize:11,fontWeight:600}},s.lbl);
-    btn.addEventListener("click",()=>{state.analSub=s.id;render();});
-    subbar.appendChild(btn);
+  const pg=div({});
+
+  // pattern callout
+  const hdr=div({style:{background:BK,borderRadius:14,padding:"24px 28px",marginBottom:28,color:WH}});
+  hdr.appendChild(div({style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},div({style:{display:"flex",gap:4}},div({style:{width:9,height:9,borderRadius:"50%",background:PK}}),div({style:{width:9,height:9,borderRadius:"50%",background:BL}}),div({style:{width:9,height:9,borderRadius:"50%",background:OR}})),div({style:{fontSize:11,color:"#555",fontWeight:700,letterSpacing:"0.15em",textTransform:"uppercase"}},"Patrón detectado · Nivel de anuncio")));
+  hdr.appendChild(el("p",{style:{margin:"0 0 10px",fontSize:17,fontWeight:700}},"Los creativos atraen. Los formularios no convierten."));
+  hdr.appendChild(el("p",{style:{margin:0,fontSize:13,color:"#aaa",lineHeight:1.8}},"Varios anuncios tienen Calidad «encima del promedio» pero Conversión «abajo del promedio». El problema no es el creativo — es lo que pasa después del clic."));
+  pg.appendChild(hdr);
+
+  // top creativos
+  pg.appendChild(div({style:{fontSize:12,fontWeight:700,color:BL,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:14}},"🏆 Creativos estrella — replicar este formato"));
+  const topList=div({style:{display:"flex",flexDirection:"column",gap:9,marginBottom:28}});
+  topAds.forEach((a,i)=>{
+    const row=div({cls:"card",style:{padding:"14px 20px",borderLeft:`4px solid ${i<2?BL:LG}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}});
+    const info=div({style:{flex:1,minWidth:200}});
+    const tb=div({style:{display:"flex",alignItems:"center",gap:8,marginBottom:5,flexWrap:"wrap"}});
+    tb.appendChild(span({style:{fontSize:13,fontWeight:700}},a.nombre.length>48?a.nombre.slice(0,48)+"…":a.nombre));
+    if(i<2)tb.appendChild(pill("★ Estrella",PK));
+    info.appendChild(tb);
+    info.appendChild(div({style:{fontSize:11,color:GY}},a.conjunto.length>55?a.conjunto.slice(0,55)+"…":a.conjunto));
+    const vl=div({style:{textAlign:"right"}});
+    vl.appendChild(div({style:{fontSize:11,color:GY,fontWeight:700,textTransform:"uppercase"}},a.leads+" leads"));
+    vl.appendChild(div({style:{fontSize:20,fontWeight:700,color:BL}},"$"+fmt(a.cpl)));
+    row.appendChild(info);row.appendChild(vl);
+    topList.appendChild(row);
   });
-  div.appendChild(subbar);
-  if(state.analSub==="resumen"){
-    const sg=h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(135px,1fr))",gap:10,marginBottom:18}});
-    [["Gasto total","CLP "+fmtM(tG),null,"#0a0a0a"],["Total leads",tL,null,"#29ABE2"],["CPL promedio","$"+fmt(avg),null,"#29ABE2"],
-     ["Mejor CPL",best?"$"+fmt(best.cpl):"—",best?.nombre?.slice(0,20),"#29ABE2"],
-     ["Peor CPL",worst?"$"+fmt(worst.cpl):"—",worst?.nombre?.slice(0,20),"#E91E8C"],
-     ["En riesgo",tG>0?Math.round(criticals.reduce((a,c)=>a+c.gasto,0)/tG*100)+"%":"0%","CPL > 2x promedio",criticals.length>0?"#F7941D":"#29ABE2"]
-    ].forEach(([l,v,s,ac])=>sg.appendChild(statCard(l,v,s,ac)));
-    div.appendChild(sg);
-    if(best&&worst&&worst.cpl/best.cpl>4) div.appendChild(alertEl("red","🚨","Brecha "+Math.round(worst.cpl/best.cpl)+"x: "+worst.nombre.slice(0,30)+" cuesta "+Math.round(worst.cpl/best.cpl)+"x más por lead que "+best.nombre.slice(0,30)+"."));
-    if(criticals.length>0) div.appendChild(alertEl("red","💸","CLP "+fmt(criticals.reduce((a,c)=>a+c.gasto,0))+" en "+criticals.length+" campaña(s) con CPL > 2x. Redirigir generaría ~"+Math.round(criticals.reduce((a,c)=>a+c.gasto,0)*.6/(best?.cpl||1))+" leads adicionales."));
-    if(noLeads.length>0) div.appendChild(alertEl("red","🗑️",noLeads.length+" campaña(s) gastaron CLP "+fmt(noLeads.reduce((a,c)=>a+c.gasto,0))+" sin leads. Pausar."));
-    if(saturated.length>0) div.appendChild(alertEl("orange","🔁",saturated.length+" campaña(s) con frecuencia >4x. Creativos nuevos necesarios."));
-    if(smallAud.length>0) div.appendChild(alertEl("orange","👥",smallAud.length+" campaña(s) con alcance <12k. Adv+ no puede optimizar."));
-    if(funnelAds.length>0) div.appendChild(alertEl("blue","📝",funnelAds.length+" anuncio(s) calidad alta / conversión baja. Simplificar formulario a máx 3 campos."));
-    if(best) div.appendChild(alertEl("blue","🏆","Más eficiente: "+best.nombre+" → $"+fmt(best.cpl)+"/lead · "+eff(best).toFixed(2)+" leads por 1.000 CLP."));
-  }
-  if(state.analSub==="eficiencia"){
-    const card=h("div",{className:"card",style:{marginBottom:12}});
-    card.appendChild(h("div",{style:{fontSize:13,fontWeight:700,marginBottom:3}},"Leads por cada 1.000 CLP"));
-    card.appendChild(h("div",{style:{fontSize:11,color:"#888",marginBottom:16}},"Promedio: "+(tL/(tG/1000)).toFixed(2)));
-    effRank.forEach((c,i)=>{
-      const p=maxEff>0?(eff(c)/maxEff)*100:0;
-      const col=eff(c)>=eff(effRank[0])*.7?"#29ABE2":eff(c)>=eff(effRank[0])*.4?"#F7941D":"#E91E8C";
-      const row=h("div",{style:{display:"grid",gridTemplateColumns:"20px 1fr 90px 55px",gap:9,alignItems:"center",marginBottom:9}});
-      const num=h("div",{style:{width:19,height:19,borderRadius:5,background:i<2?"#29ABE2":"#e8e8e8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:i<2?"#fff":"#888"}},""+( i+1));
-      const info=h("div",{});
-      info.appendChild(h("div",{style:{fontSize:11,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},c.nombre));
-      const bg=h("div",{style:{height:4,background:"#e8e8e8",borderRadius:2,marginTop:3}});
-      bg.appendChild(h("div",{style:{width:p+"%",height:"100%",background:col,borderRadius:2}}));
-      info.appendChild(bg);
-      row.appendChild(num); row.appendChild(info);
-      row.appendChild(h("div",{style:{textAlign:"center"}},h("span",{style:{fontWeight:700,color:col,fontSize:12}},eff(c).toFixed(2)),h("span",{style:{fontSize:9,color:"#888"}}," l/1k")));
-      row.appendChild(h("div",{style:{textAlign:"right",fontSize:10,color:"#888"}},tG>0?Math.round(c.gasto/tG*100)+"%":"0%"));
-      card.appendChild(row);
-    });
-    div.appendChild(card);
-  }
-  if(state.analSub==="graficos"){
-    if(cwl.length>0){
-      const card=h("div",{className:"card",style:{marginBottom:12}});
-      card.appendChild(h("div",{style:{fontSize:13,fontWeight:700,marginBottom:3}},"CPL por campaña"));
-      card.appendChild(h("div",{style:{fontSize:11,color:"#888",marginBottom:16}},"Rojo = más caro · azul = más eficiente"));
-      const maxCPL=cwl[cwl.length-1]?.cpl||1;
-      const wrap=h("div",{style:{display:"flex",alignItems:"flex-end",gap:4,height:"160px"}});
-      cwl.slice(0,10).forEach(c=>{
-        const p=(c.cpl/maxCPL)*100;
-        const col=c.cpl===maxCPL?"#E91E8C":c.cpl<maxCPL*.4?"#29ABE2":"#F7941D";
-        const col2=h("div",{style:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",gap:2}});
-        col2.appendChild(h("div",{style:{fontSize:7,color:col,fontWeight:700,textAlign:"center"}},"$"+fmt(c.cpl)));
-        col2.appendChild(h("div",{style:{width:"100%",background:col,borderRadius:"2px 2px 0 0",height:p+"%",minHeight:2}}));
-        col2.appendChild(h("div",{style:{fontSize:7,color:"#888",textAlign:"center",lineHeight:1.2,wordBreak:"break-word",maxWidth:40}},c.nombre.slice(0,14)));
-        wrap.appendChild(col2);
-      });
-      card.appendChild(wrap); div.appendChild(card);
+  pg.appendChild(topList);
+
+  // worst
+  pg.appendChild(div({style:{fontSize:12,fontWeight:700,color:PK,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:14}},"⚠ Creativos problemáticos — actuar ahora"));
+  const wrstList=div({style:{display:"flex",flexDirection:"column",gap:9,marginBottom:28}});
+  worstAds.forEach(a=>{
+    const isFunnel=/encima|above/i.test(a.calidad)&&/abajo|below/i.test(a.conversion);
+    const row=div({cls:"card",style:{padding:"14px 20px",borderLeft:`4px solid ${PK}`}});
+    const top=div({style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12}});
+    const info=div({style:{flex:1,minWidth:200}});
+    const tb=div({style:{display:"flex",alignItems:"center",gap:8,marginBottom:7,flexWrap:"wrap"}});
+    tb.appendChild(span({style:{fontSize:13,fontWeight:700}},a.nombre.length>48?a.nombre.slice(0,48)+"…":a.nombre));
+    if(isFunnel)tb.appendChild(pill("Problema post-clic",OR));
+    info.appendChild(tb);
+    if(a.calidad!=="-"||a.conversion!=="-"){
+      const scores=div({style:{display:"flex",gap:12,flexWrap:"wrap",marginBottom:6}});
+      scores.appendChild(div({style:{display:"flex",alignItems:"center",gap:5}},span({style:{fontSize:10,color:GY,fontWeight:600}},"Calidad:"),scoreBadge(a.calidad)));
+      scores.appendChild(div({style:{display:"flex",alignItems:"center",gap:5}},span({style:{fontSize:10,color:GY,fontWeight:600}},"Conversión:"),scoreBadge(a.conversion)));
+      info.appendChild(scores);
     }
-    const card2=h("div",{className:"card"});
-    card2.appendChild(h("div",{style:{fontSize:13,fontWeight:700,marginBottom:3}},"Distribución de presupuesto"));
-    card2.appendChild(h("div",{style:{fontSize:11,color:"#888",marginBottom:14}},"% del gasto total"));
-    [...state.data.camps].sort((a,b)=>b.gasto-a.gasto).slice(0,8).forEach(c=>{
-      const {tG:tg}=getStats(state.data.camps);
-      const p=tg>0?(c.gasto/tg)*100:0;
-      const col=p>20?"#E91E8C":p>10?"#F7941D":"#29ABE2";
-      const row=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,alignItems:"center",marginBottom:9}});
-      row.appendChild(h("div",{style:{fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},c.nombre));
-      const bw=h("div",{style:{display:"flex",alignItems:"center",gap:7}});
-      const bg=h("div",{style:{flex:1,height:5,background:"#e8e8e8",borderRadius:3}});
-      bg.appendChild(h("div",{style:{width:p+"%",height:"100%",background:col,borderRadius:3}}));
-      bw.appendChild(bg); bw.appendChild(h("span",{style:{fontSize:11,fontWeight:700,color:col,minWidth:32}},p.toFixed(1)+"%"));
-      row.appendChild(bw); card2.appendChild(row);
+    info.appendChild(div({style:{fontSize:11,color:GY}},a.conjunto.length>55?a.conjunto.slice(0,55)+"…":a.conjunto));
+    const vl=div({style:{textAlign:"right"}});
+    vl.appendChild(div({style:{fontSize:11,color:GY,fontWeight:700,textTransform:"uppercase"}},a.leads+" leads"));
+    vl.appendChild(div({style:{fontSize:20,fontWeight:700,color:PK}},"$"+fmt(a.cpl)));
+    top.appendChild(info);top.appendChild(vl);row.appendChild(top);
+    wrstList.appendChild(row);
+  });
+  pg.appendChild(wrstList);
+
+  // takeaways
+  const tips=div({style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:14}});
+  [{t:"¿Qué tienen los creativos estrella?",col:BL,pts:["Imagen estática simple — sin carousel complejo","El formato storytelling conecta con la audiencia","Audiencia grande — el algoritmo tiene espacio para optimizar","Validado: el mismo formato funciona en conjuntos distintos"]},{t:"Cómo resolver el problema post-clic",col:OR,pts:["Reducir formulario a máximo 3 campos","Agregar pantalla de confirmación con propuesta de valor","Testear landing page externa vs. formulario nativo","Verificar que la promesa del ad coincide con lo que ve el usuario"]},{t:"Qué hacer con los creativos estrella",col:PK,pts:["Replicar el formato en campañas con CPL alto","Adaptar el copy para otros programas y diplomados","No pausar creativos con CPL bajo y buen volumen","Escalar gradualmente — máximo +20% de presupuesto cada 3 días"]}].forEach(card=>{
+    const c=div({cls:"card",style:{borderTop:`4px solid ${card.col}`}});
+    c.appendChild(div({style:{fontSize:13,fontWeight:700,color:card.col,marginBottom:14}},card.t));
+    card.pts.forEach(p=>{
+      const r=div({style:{display:"flex",gap:10,alignItems:"flex-start",marginBottom:9}});
+      r.appendChild(div({style:{width:5,height:5,borderRadius:"50%",background:card.col,marginTop:7,flexShrink:0}}));
+      r.appendChild(div({style:{fontSize:12,color:DK,lineHeight:1.6}},p));
+      c.appendChild(r);
     });
-    div.appendChild(card2);
-  }
-  if(state.analSub==="creativos"){
-    if(funnelAds.length>0){
-      const fc=h("div",{className:"card",style:{marginBottom:12,borderLeft:"4px solid #F7941D"}});
-      fc.appendChild(h("div",{style:{fontSize:12,fontWeight:700,color:"#F7941D",marginBottom:9}},"⚠ Problema post-clic — calidad alta, conversión baja"));
-      funnelAds.forEach(a=>{
-        const r=h("div",{style:{background:"#f7f5f0",borderRadius:7,padding:"7px 10px",marginBottom:5,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:7}});
-        r.appendChild(h("span",{style:{fontSize:11,fontWeight:600}},a.nombre.slice(0,48)));
-        r.appendChild(h("span",{style:{fontSize:11,color:"#E91E8C",fontFamily:"monospace",fontWeight:600}},"CPL $"+fmt(a.cpl)));
-        fc.appendChild(r);
-      });
-      div.appendChild(fc);
-    }
-    const g=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:11}});
-    [[topAds,"🏆 Top creativos","#29ABE2"],[worstAds,"⚠ Peores creativos","#E91E8C"]].forEach(([list,title,col])=>{
-      const card=h("div",{className:"card",style:{borderTop:"4px solid "+col}});
-      card.appendChild(h("div",{style:{fontSize:11,fontWeight:700,color:col,marginBottom:11}},title));
-      list.forEach((a,i)=>{
-        const r=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,paddingBottom:8,borderBottom:i<list.length-1?"1px solid #e8e8e8":"none"}});
-        r.appendChild(h("div",{style:{flex:1,minWidth:0}},h("div",{style:{fontSize:10,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},a.nombre.slice(0,30)),h("div",{style:{fontSize:9,color:"#888"}},a.leads+" leads")));
-        r.appendChild(h("span",{style:{fontSize:12,fontWeight:700,color:col,fontFamily:"monospace",marginLeft:5}},"$"+fmt(a.cpl)));
-        card.appendChild(r);
-      });
-      g.appendChild(card);
-    });
-    div.appendChild(g);
-  }
-  return div;
+    tips.appendChild(c);
+  });
+  pg.appendChild(tips);
+  return pg;
 }
 
-function renderReco() {
-  const {camps,ads}=state.data;
-  const {tG,tL,avg,cwl,best}=getStats(camps);
-  const signals=[];
-  const crit=cwl.filter(c=>c.cpl>avg*2).sort((a,b)=>b.gasto-a.gasto);
-  const wG=crit.reduce((a,c)=>a+c.gasto,0);
-  if(crit.length>0) signals.push({score:wG,color:"#E91E8C",icon:"⛔",urg:"HOY",tipo:"presupuesto",titulo:crit.length===1?"Recortar presupuesto de: "+crit[0].nombre.slice(0,35):"Recortar "+crit.length+" campañas con CPL crítico",porque:"Consumen CLP "+fmt(wG)+" ("+Math.round(wG/tG*100)+"% del total) y generan solo "+Math.round(crit.reduce((a,c)=>a+c.leads,0)/Math.max(tL,1)*100)+"% de los leads.",accion:"Recortar 60–70% a: "+crit.slice(0,3).map(c=>c.nombre.slice(0,25)).join(", ")+". Redirigir a "+(best?.nombre?.slice(0,30)||"mejor campaña")+".",impacto:"~"+Math.round(wG*.6/(best?.cpl||1))+" leads adicionales sin aumentar presupuesto",items:crit.slice(0,3).map(c=>c.nombre.slice(0,45)+" — CPL $"+fmt(c.cpl))});
-  const nl=camps.filter(c=>c.gasto>5000&&c.leads===0);
-  if(nl.length>0) signals.push({score:nl.reduce((a,c)=>a+c.gasto,0)*1.5,color:"#E91E8C",icon:"🗑️",urg:"HOY",tipo:"presupuesto",titulo:"Pausar "+nl.length+" campaña(s) con gasto y cero resultados",porque:"Gastaron CLP "+fmt(nl.reduce((a,c)=>a+c.gasto,0))+" sin generar ningún lead.",accion:"Pausar y revisar configuración del píxel.",impacto:"Recupera CLP "+fmt(nl.reduce((a,c)=>a+c.gasto,0))+" para reasignar",items:nl.slice(0,3).map(c=>c.nombre.slice(0,45))});
-  const sat=camps.filter(c=>c.frecuencia>4&&c.leads>0);
-  if(sat.length>0) signals.push({score:sat.reduce((a,c)=>a+c.gasto,0)*.8,color:"#F7941D",icon:"🎨",urg:"ESTA SEMANA",tipo:"creativos",titulo:"Renovar creativos en "+sat.length+" campaña(s) saturadas",porque:"Frecuencia "+sat.map(c=>c.frecuencia.toFixed(1)+"x").join(", ")+". Sobre 4x la audiencia deja de responder.",accion:"2–3 creativos nuevos. Meta: frecuencia <2.5x en 2 semanas.",impacto:"Puede reducir CPL 30–50% sin cambiar presupuesto",items:sat.slice(0,3).map(c=>c.nombre.slice(0,45)+" — frec. "+c.frecuencia.toFixed(1)+"x")});
-  const sml=camps.filter(c=>c.alcance>0&&c.alcance<12000&&c.leads>0);
-  if(sml.length>0) signals.push({score:sml.reduce((a,c)=>a+c.gasto,0)*1.2,color:"#F7941D",icon:"🗺️",urg:"ESTA SEMANA",tipo:"audiencia",titulo:"Ampliar audiencia en "+sml.length+" campaña(s) microscópicas",porque:"Adv+ necesita mín. 50k personas.",accion:"Ampliar cobertura geográfica y rango etario.",impacto:"Con audiencia >50k el CPL puede bajar hasta 60%",items:sml.slice(0,3).map(s=>s.nombre.slice(0,45)+" — "+fmt(s.alcance)+" personas")});
-  const fn=ads.filter(a=>/encima|above/i.test(a.calidad)&&/abajo|below/i.test(a.conversion)&&a.leads>0);
-  if(fn.length>0) signals.push({score:fn.reduce((a,x)=>a+x.gasto,0)*.9,color:"#29ABE2",icon:"📝",urg:"ESTA SEMANA",tipo:"formulario",titulo:"Simplificar formularios — "+fn.length+" anuncio(s) pierden leads post-clic",porque:"Calidad alta + conversión baja = formulario repele.",accion:"Máx 3 campos. Pantalla de confirmación.",impacto:"Formularios simples pueden duplicar la conversión",items:fn.slice(0,3).map(a=>a.nombre.slice(0,45))});
-  const under=cwl.filter(c=>c.cpl<avg*.6&&tG>0&&c.gasto/tG<0.1);
-  if(under.length>0) signals.push({score:under.reduce((a,c)=>a+(avg-c.cpl)*c.leads,0)*.7,color:"#29ABE2",icon:"🚀",urg:"ESTA SEMANA",tipo:"presupuesto",titulo:"Escalar "+under.length+" campaña(s) subfinanciadas con CPL óptimo",porque:under.map(c=>c.nombre.slice(0,25)).join(", ")+" tiene CPL bajo pero recibe poco presupuesto.",accion:"Aumentar 30–50% el presupuesto. Máx +20% cada 3 días.",impacto:"Cada CLP aquí genera "+(under[0]?eff(under[0]).toFixed(2):"más")+" leads por 1.000 CLP",items:under.slice(0,2).map(c=>c.nombre.slice(0,45))});
-  const generics=[
-    {color:"#F7941D",icon:"🤖",urg:"PRÓXIMA SEMANA",tipo:"optimización",titulo:"Crear reglas automáticas de pausa por CPL",porque:"Sin reglas una campaña puede disparar el CPL durante el finde sin que nadie lo note.",accion:"Ads Manager → Reglas automáticas → CPL > 2x por 2 días → pausar y notificar.",impacto:"Evita quemar presupuesto en períodos de bajo rendimiento",items:[]},
-    {color:"#29ABE2",icon:"👥",urg:"PRÓXIMA SEMANA",tipo:"audiencia",titulo:"Crear audiencias lookalike de tus mejores leads",porque:"Con leads pasados Meta puede encontrar perfiles similares más eficientes.",accion:"Subir lista (mín. 100 leads) → Lookalike 1%, 2%, 3% → testear.",impacto:"Lookalike suelen tener CPL 20–40% menor que intereses",items:[]},
-    {color:"#29ABE2",icon:"🧪",urg:"PRÓXIMA SEMANA",tipo:"creativos",titulo:"Implementar test A/B en tu mejor campaña",porque:"Sin comparativa las decisiones son a ciegas.",accion:"Duplicar conjunto, cambiar una variable, correr 7 días, pausar el perdedor.",impacto:"Los mejores creativos suelen rendir 2–3x el promedio",items:[]},
-  ];
-  const top5=[...signals].sort((a,b)=>b.score-a.score).slice(0,5);
-  while(top5.length<5) top5.push(generics[top5.length-signals.length]||generics[0]);
-  const tipoCol={presupuesto:"#E91E8C",creativos:"#F7941D",audiencia:"#F7941D",formulario:"#29ABE2",optimización:"#F7941D"};
-  const div=h("div",{});
-  const hdr=h("div",{style:{background:"#0a0a0a",borderRadius:14,padding:"18px 22px",marginBottom:20,color:"#fff"}});
-  hdr.appendChild(h("div",{style:{fontSize:10,color:"#555",fontWeight:700,letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:8}},"Prioridades detectadas automáticamente"));
-  hdr.appendChild(h("p",{style:{margin:"0 0 4px",fontSize:15,fontWeight:700}},"Las 5 acciones de mayor impacto"));
-  hdr.appendChild(h("p",{style:{margin:0,fontSize:12,color:"#aaa",lineHeight:1.6}},"Ordenadas por impacto económico. Las 2 primeras esta semana pueden cambiar los resultados."));
-  div.appendChild(hdr);
-  top5.forEach((r,i)=>{
-    const card=h("div",{className:"rec-card"});
-    const top=h("div",{style:{display:"flex",alignItems:"stretch"}});
-    const num=h("div",{style:{background:i<2?r.color:"#f7f5f0",width:50,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}});
-    num.appendChild(h("span",{style:{fontSize:20,fontWeight:700,color:i<2?"#fff":"#e8e8e8"}},""+( i+1)));
-    const ta=h("div",{style:{flex:1,padding:"13px 15px",borderBottom:"1px solid #e8e8e8"}});
-    ta.appendChild(h("div",{style:{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}},
-      h("span",{style:{fontSize:16}},r.icon),
-      h("div",{style:{flex:1}},
-        h("div",{style:{fontSize:13,fontWeight:700,lineHeight:1.4}},r.titulo),
-        h("div",{style:{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}},
-          h("span",{className:"pill",style:{background:i<2?r.color+"18":"#f0f0f0",color:i<2?r.color:"#888"}},r.urg),
-          h("span",{className:"pill",style:{background:(tipoCol[r.tipo]||"#29ABE2")+"15",color:tipoCol[r.tipo]||"#29ABE2"}},r.tipo)
-        )
-      )
-    ));
-    top.appendChild(num); top.appendChild(ta); card.appendChild(top);
-    const body=h("div",{style:{padding:"13px 15px 15px"}});
-    body.appendChild(h("div",{style:{marginBottom:10}},
-      h("div",{style:{fontSize:9,color:"#888",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:4}},"¿Por qué es urgente?"),
-      h("p",{style:{margin:0,fontSize:12,color:"#333",lineHeight:1.6}},r.porque)
-    ));
-    if(r.items&&r.items.length>0){
-      const il=h("div",{style:{marginBottom:10}});
-      r.items.forEach(item=>il.appendChild(h("div",{style:{background:"#f7f5f0",borderRadius:6,padding:"6px 9px",marginBottom:4,fontSize:11,color:"#888"}},item)));
-      body.appendChild(il);
-    }
-    const ab=h("div",{style:{background:r.color+"08",border:"1px solid "+r.color+"25",borderLeft:"4px solid "+r.color,borderRadius:8,padding:"9px 12px",marginBottom:8}});
-    ab.appendChild(h("div",{style:{fontSize:9,color:r.color,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}},"⚡ Acción concreta"));
-    ab.appendChild(h("p",{style:{margin:0,fontSize:12,color:"#333",lineHeight:1.6}},r.accion));
-    body.appendChild(ab);
-    body.appendChild(h("div",{style:{display:"flex",alignItems:"center",gap:7}},
-      h("div",{style:{width:6,height:6,borderRadius:"50%",background:r.color}}),
-      h("span",{style:{fontSize:11,color:r.color,fontWeight:700}},r.impacto)
-    ));
-    card.appendChild(body); div.appendChild(card);
-  });
-  return div;
-}
-
-function renderCriticas() {
-  const fCamps=state.objFilter.w==="all"?state.data.camps:state.data.camps.filter(c=>c.objetivo===state.objFilter.w);
-  const {tG,tL,avg,cwl,best}=getStats(fCamps);
+function renderCriticas(){
+  const fCamps=S.of.w==="all"?S.data.camps:S.data.camps.filter(c=>c.objetivo===S.of.w);
+  const{tG,tL,avg,cwl,best}=getStats(fCamps);
   const critW=cwl.filter(c=>c.cpl>avg*2);
-  const div=h("div",{});
-  const of=makeObjFilter(state.objFilter.w,"w");
-  if(of) div.appendChild(of);
-  if(critW.length===0){div.appendChild(h("div",{className:"card",style:{textAlign:"center",padding:"48px 32px"}},h("div",{style:{fontSize:32,marginBottom:12}},"🎉"),h("div",{style:{fontSize:16,fontWeight:700}},"No hay campañas críticas")));return div;}
-  const bar=h("div",{className:"card",style:{marginBottom:14,borderLeft:"4px solid #E91E8C",display:"flex",gap:18,flexWrap:"wrap"}});
-  [["CPL promedio","$"+fmt(avg),"#0a0a0a"],["Críticas",""+critW.length,"#E91E8C"],["Gasto en críticas","CLP "+fmt(critW.reduce((a,c)=>a+c.gasto,0)),"#E91E8C"]].forEach(([l,v,co])=>{
-    bar.appendChild(h("div",{},h("div",{style:{fontSize:9,color:"#888",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase"}},l),h("div",{style:{fontSize:17,fontWeight:700,color:co,marginTop:3}},v)));
+  const pg=div({});
+  const of=objFilter(S.of.w,"w");if(of)pg.appendChild(of);
+  if(critW.length===0){
+    pg.appendChild(div({cls:"card",style:{textAlign:"center",padding:"56px 32px"}},div({style:{fontSize:36,marginBottom:14}},"🎉"),div({style:{fontSize:16,fontWeight:700,marginBottom:8}},"No hay campañas críticas"),div({style:{fontSize:14,color:GY}},"Ninguna campaña supera 2× el CPL promedio.")));
+    return pg;
+  }
+  const bar=div({cls:"card",style:{marginBottom:22,display:"flex",gap:28,flexWrap:"wrap",borderLeft:`4px solid ${PK}`}});
+  [["CPL promedio","$"+fmt(avg),BK],["Campañas críticas",""+critW.length,PK],["Gasto en críticas","CLP "+fmt(critW.reduce((a,c)=>a+c.gasto,0)),PK]].forEach(([l,v,co])=>{
+    bar.appendChild(div({},div({style:{fontSize:10,color:GY,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase"}}," "+l),div({style:{fontSize:22,fontWeight:700,color:co,marginTop:4}},v)));
   });
-  div.appendChild(bar);
+  pg.appendChild(bar);
   critW.forEach((c,idx)=>{
-    const ac=c.cpl>avg*4?"#E91E8C":"#F7941D";
-    const card=h("div",{style:{background:"#fff",borderRadius:12,marginBottom:8,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.06)",borderTop:"4px solid "+ac}});
-    const hdr=h("div",{style:{padding:"13px 16px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}});
-    const left=h("div",{style:{display:"flex",alignItems:"center",gap:10}});
-    const badge=h("div",{style:{background:ac,borderRadius:7,padding:"4px 9px"}},h("span",{style:{fontSize:11,fontWeight:700,color:"#fff",fontFamily:"monospace"}},"$"+fmt(c.cpl)));
-    left.appendChild(badge);
-    left.appendChild(h("div",{},h("div",{style:{fontSize:12,fontWeight:700}},c.nombre),h("div",{style:{fontSize:10,color:"#888",marginTop:1}},c.leads+" leads · frec. "+c.frecuencia.toFixed(1)+"x · "+(c.cpl/avg).toFixed(1)+"x el promedio")));
-    hdr.appendChild(left);
-    hdr.appendChild(h("span",{style:{fontSize:11,color:"#888"}},state.expanded===idx?"▲":"▼"));
-    hdr.addEventListener("click",()=>{state.expanded=state.expanded===idx?null:idx;render();});
+    const ac=c.cpl>avg*4?PK:OR;
+    const card=div({style:{background:WH,borderRadius:14,marginBottom:12,overflow:"hidden",boxShadow:"0 1px 6px rgba(0,0,0,.06)",borderTop:`4px solid ${ac}`}});
+    const hdr=div({style:{padding:"18px 24px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}});
+    const left=div({style:{display:"flex",alignItems:"center",gap:14}});
+    const badge=div({style:{background:ac,borderRadius:10,padding:"6px 12px"}},span({style:{fontSize:12,fontWeight:700,color:WH,fontFamily:"monospace"}},"$"+fmt(c.cpl)));
+    const info=div({},div({style:{fontSize:15,fontWeight:700}},c.nombre),div({style:{fontSize:11,color:GY,marginTop:2}},c.leads+" leads · frec. "+c.frecuencia.toFixed(1)+"× · "+(c.cpl/avg).toFixed(1)+"× el promedio"));
+    left.appendChild(badge);left.appendChild(info);hdr.appendChild(left);
+    hdr.appendChild(span({style:{fontSize:14,color:GY}},S.exp===idx?"▲":"▼"));
+    hdr.addEventListener("click",()=>{S.exp=S.exp===idx?null:idx;render();});
     card.appendChild(hdr);
-    if(state.expanded===idx){
-      const body=h("div",{style:{padding:"0 16px 14px",borderTop:"1px solid #e8e8e8"}});
-      const mg=h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(90px,1fr))",gap:8,marginTop:12,marginBottom:12}});
-      [["Leads",""+c.leads,false],["Gasto","CLP "+fmt(c.gasto),false],["Frecuencia",c.frecuencia.toFixed(1)+"x",c.frecuencia>3],["CPL vs avg",(c.cpl/avg).toFixed(1)+"x",true],["Alcance",fmt(c.alcance),c.alcance<15000]].forEach(([l,v,al])=>{
-        mg.appendChild(h("div",{style:{background:al?"#E91E8C08":"#f7f5f0",border:"1px solid "+(al?"#E91E8C25":"#e8e8e8"),borderRadius:8,padding:"9px 10px"}},h("div",{style:{fontSize:9,color:"#888",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:3}},l),h("div",{style:{fontSize:15,fontWeight:700,color:al?"#E91E8C":"#0a0a0a"}},v)));
+    if(S.exp===idx){
+      const body=div({style:{padding:"0 24px 22px",borderTop:`1px solid ${LG}`}});
+      const mg=div({style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(105px,1fr))",gap:10,marginTop:16,marginBottom:18}});
+      [["Leads",""+c.leads,false],["Gasto","$"+fmt(c.gasto),false],["Frecuencia",c.frecuencia.toFixed(1)+"×",c.frecuencia>3],["CPL vs avg",(c.cpl/avg).toFixed(1)+"×",true],["Alcance",fmt(c.alcance),c.alcance<15000]].forEach(([l,v,al])=>{
+        mg.appendChild(div({style:{background:al?PK+"08":CR,border:`1px solid ${al?PK+"25":LG}`,borderRadius:10,padding:"12px"}},div({style:{fontSize:9,color:GY,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:5}},l),div({style:{fontSize:18,fontWeight:700,color:al?PK:BK}},v)));
       });
       body.appendChild(mg);
-      const ab=h("div",{style:{background:"#f7f5f0",borderRadius:8,padding:"10px 12px"}});
-      ab.appendChild(h("div",{style:{fontSize:9,fontWeight:700,color:"#0a0a0a",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.08em"}},"Acciones recomendadas"));
-      [c.frecuencia>4&&"⛔ Frecuencia crítica — renovar creativos",c.alcance<10000&&"🗺️ Alcance muy pequeño — ampliar targeting",c.cpl>avg*4&&"💰 Pausar y reasignar a "+(best?.nombre?.slice(0,25)||"mejor campaña"),"🎯 Verificar intereses Adv+ como sugerencias","📝 Formulario — máximo 3 campos"].filter(Boolean).forEach(a=>{
-        ab.appendChild(h("div",{style:{fontSize:11,color:"#333",lineHeight:1.6,marginBottom:4,display:"flex",gap:6}},h("span",{},a.slice(0,2)),h("span",{},a.slice(2))));
+      const ab=div({style:{background:CR,borderRadius:10,padding:"14px 18px"}});
+      ab.appendChild(div({style:{fontSize:10,fontWeight:700,color:BK,marginBottom:10,letterSpacing:"0.08em",textTransform:"uppercase"}},"Acciones recomendadas"));
+      [c.frecuencia>4&&"⛔ Frecuencia crítica — renovar creativos urgente",c.alcance<10000&&"🗺️ Alcance muy pequeño — ampliar targeting",c.cpl>avg*4&&"💰 Pausar y reasignar a "+(best?.nombre?.slice(0,25)||"mejor campaña"),"🎯 Verificar intereses Adv+ como sugerencias (no restricciones)","📝 Revisar formulario — reducir a máximo 3 campos"].filter(Boolean).forEach(a=>{
+        const r=div({style:{fontSize:13,color:DK,lineHeight:1.6,marginBottom:7,display:"flex",gap:8}});
+        r.appendChild(span({},a.slice(0,2)));r.appendChild(span({},a.slice(2)));
+        ab.appendChild(r);
       });
-      body.appendChild(ab); card.appendChild(body);
+      body.appendChild(ab);card.appendChild(body);
     }
-    div.appendChild(card);
+    pg.appendChild(card);
   });
-  return div;
+  return pg;
 }
 
-const TABS=[{id:"upload",lbl:"📂 Importar"},{id:"ov",lbl:"Panorama"},{id:"analisis",lbl:"📈 Análisis"},{id:"reco",lbl:"⚡ 5 Recomendaciones"},{id:"worst",lbl:"Campañas críticas"}];
-
-function render() {
-  const hs=document.getElementById("header-stats");
-  if(state.fs.c==="ok"||state.fs.s==="ok"||state.fs.a==="ok") hs.textContent=state.data.camps.length+" campañas · "+state.data.sets.length+" conjuntos · "+state.data.ads.length+" anuncios";
-  const tabsEl=document.getElementById("tabs");
-  tabsEl.innerHTML="";
-  TABS.forEach(t=>{
-    const btn=document.createElement("button");
-    btn.className="tab"+(state.tab===t.id?" active":"");
-    btn.textContent=t.lbl;
-    btn.addEventListener("click",()=>{state.tab=t.id;render();});
-    tabsEl.appendChild(btn);
+function renderAdvplus(){
+  const{sets}=S.data;
+  const pg=div({});
+  const hdr=div({style:{background:BK,borderRadius:14,padding:"26px 30px",marginBottom:26,color:WH}});
+  hdr.appendChild(div({style:{display:"flex",alignItems:"center",gap:10,marginBottom:12}},div({style:{display:"flex",gap:4}},div({style:{width:10,height:10,borderRadius:"50%",background:PK}}),div({style:{width:10,height:10,borderRadius:"50%",background:BL}}),div({style:{width:10,height:10,borderRadius:"50%",background:OR}})),div({style:{fontSize:11,color:"#555",fontWeight:700,letterSpacing:"0.15em",textTransform:"uppercase"}},"Diagnóstico · Adv+ vs. Intereses")));
+  hdr.appendChild(el("p",{style:{margin:"0 0 8px",fontSize:17,fontWeight:700}},"Todos tus conjuntos activos ya usan Advantage+."));
+  hdr.appendChild(el("p",{style:{margin:0,fontSize:13,color:"#aaa",lineHeight:1.8}},"El problema no es la herramienta — es el tamaño de la audiencia. Audiencias >30k: CPL óptimo. Audiencias <15k: CPL crítico. No agregar restricciones de intereses."));
+  pg.appendChild(hdr);
+  if(sets.length>0){
+    const of=objFilter(S.of.adv,"adv");if(of)pg.appendChild(of);
+    const fSets=S.of.adv==="all"?sets:sets.filter(s=>s.objetivo===S.of.adv);
+    const sWL=fSets.filter(s=>s.leads>0).sort((a,b)=>b.alcance-a.alcance);
+    const avgSetCPL=sWL.length?sWL.reduce((a,s)=>a+s.cpl,0)/sWL.length:0;
+    if(sWL.length>0){
+      const card=div({cls:"card",style:{marginBottom:22}});
+      card.appendChild(div({style:{fontSize:15,fontWeight:700,marginBottom:4}},"Alcance vs CPL por conjunto"));
+      card.appendChild(div({style:{fontSize:12,color:GY,marginBottom:22}},"Barra = tamaño de audiencia · Color = CPL relativo al promedio"));
+      sWL.slice(0,15).forEach(s=>{
+        const maxA=sWL[0]?.alcance||1;
+        const p=Math.min((s.alcance/maxA)*100,100);
+        const col=s.cpl>avgSetCPL*2?PK:s.cpl>avgSetCPL*1.3?OR:BL;
+        const row=div({style:{display:"grid",gridTemplateColumns:"150px 1fr 90px",gap:14,alignItems:"center",marginBottom:10}});
+        row.appendChild(div({style:{fontSize:11,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:s.cpl<avgSetCPL?BK:GY,fontWeight:s.cpl<avgSetCPL?600:400,title:s.nombre}},s.nombre));
+        const bw=div({});
+        const bg=div({style:{height:6,background:LG,borderRadius:3}});
+        bg.appendChild(div({style:{width:p+"%",height:"100%",background:col,borderRadius:3}}));
+        bw.appendChild(bg);bw.appendChild(div({style:{fontSize:10,color:GY,marginTop:3}},fmt(s.alcance)+" personas"));
+        row.appendChild(bw);
+        row.appendChild(div({style:{fontSize:13,fontWeight:700,color:col,textAlign:"right",fontFamily:"monospace"}},"$"+fmt(s.cpl)));
+        card.appendChild(row);
+      });
+      pg.appendChild(card);
+    }
+  }
+  const tips=div({style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:14}});
+  [{t:"✅ Sigue usando Adv+",col:BL,pts:["Funciona bien con audiencias grandes (+30k)","CURSEÑ1 y CURSEÑ2: CPL óptimo con Adv+","No rompas lo que ya funciona"]},{t:"⚙ Cómo usar intereses",col:OR,pts:["En Adv+, ponlos como SUGERENCIAS, no restricciones","Meta puede salir si encuentra mejores audiencias","Úsalos para orientar, no para limitar"]},{t:"🚫 Lo que NO hacer",col:PK,pts:["No agregar restricciones a conjuntos con alcance < 15k","No segmentar por edad muy específica en nichos pequeños","No crear conjuntos sin revisar tamaño estimado"]},{t:"📋 Intereses sugeridos",col:BK,pts:["PSIDIP26: salud mental, coaching, neurociencias","DELEA1AR: derecho laboral, compliance, RRHH","MASUNIACC: educación superior, comunicaciones, marketing"]}].forEach(card=>{
+    const c=div({cls:"card",style:{borderTop:`4px solid ${card.col}`}});
+    c.appendChild(div({style:{fontSize:13,fontWeight:700,color:card.col,marginBottom:14}},card.t));
+    card.pts.forEach(p=>{
+      const r=div({style:{display:"flex",gap:10,alignItems:"flex-start",marginBottom:9}});
+      r.appendChild(div({style:{width:5,height:5,borderRadius:"50%",background:card.col,marginTop:7,flexShrink:0}}));
+      r.appendChild(div({style:{fontSize:12,color:DK,lineHeight:1.6}},p));
+      c.appendChild(r);
+    });
+    tips.appendChild(c);
   });
-  const content=document.getElementById("content");
-  content.innerHTML="";
-  const allLoaded=state.fs.c==="ok"||state.fs.s==="ok"||state.fs.a==="ok";
+  pg.appendChild(tips);
+  return pg;
+}
+
+/* ── RENDER ── */
+const TABS=[{id:"upload",lbl:"📂 Importar"},{id:"ov",lbl:"Panorama"},{id:"creativos",lbl:"Creativos"},{id:"worst",lbl:"Campañas críticas"},{id:"adv",lbl:"Adv+ vs Intereses"}];
+
+function render(){
+  // header stats
+  const hs=document.getElementById("hstats");
+  const allLoaded=S.fs.c==="ok"||S.fs.s==="ok"||S.fs.a==="ok";
+  if(allLoaded)hs.textContent=S.data.camps.length+" campañas · "+S.data.sets.length+" conjuntos · "+S.data.ads.length+" anuncios";
+  else hs.textContent="";
+
+  // legend
+  const hl=document.getElementById("hlegend");hl.innerHTML="";
+  if(allLoaded){
+    const objs=[...new Set(S.data.camps.map(c=>c.objetivo))];
+    if(objs.length>1)objs.forEach(o=>{
+      const m=OBJ[o]||OBJ.otro;
+      const item=div({style:{display:"flex",alignItems:"center",gap:6,background:m.color+"20",borderRadius:100,padding:"4px 12px"}});
+      item.appendChild(div({style:{width:6,height:6,borderRadius:"50%",background:m.color}}));
+      item.appendChild(span({style:{fontSize:10,color:m.color,fontWeight:700}},m.icon+" "+m.label+" ("+S.data.camps.filter(c=>c.objetivo===o).length+")"));
+      hl.appendChild(item);
+    });
+  }
+
+  // tabs
+  const tabsEl=document.getElementById("tabs");tabsEl.innerHTML="";
+  TABS.forEach(t=>{
+    const b=document.createElement("button");
+    b.className="tab-btn"+(S.tab===t.id?" active":"");
+    b.textContent=t.lbl;
+    b.addEventListener("click",()=>{S.tab=t.id;render();});
+    tabsEl.appendChild(b);
+  });
+
+  // content
+  const page=document.getElementById("page");page.innerHTML="";
   let view;
-  if(state.tab==="upload") view=renderUpload();
-  else if(!allLoaded) view=emptyState();
-  else if(state.tab==="ov") view=renderPanorama();
-  else if(state.tab==="analisis") view=renderAnalisis();
-  else if(state.tab==="reco") view=renderReco();
-  else if(state.tab==="worst") view=renderCriticas();
-  if(view) content.appendChild(view);
+  if(S.tab==="upload")view=renderUpload();
+  else if(!allLoaded)view=emptyState();
+  else if(S.tab==="ov")view=renderPanorama();
+  else if(S.tab==="creativos")view=renderCreativos();
+  else if(S.tab==="worst")view=renderCriticas();
+  else if(S.tab==="adv")view=renderAdvplus();
+  if(view)page.appendChild(view);
 }
 
 render();
