@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MÁS UNIACC — Deep Dive Programas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07090e;
+  --s1: #0e1116;
+  --s2: #161920;
+  --s3: #1e2129;
+  --border: #252a35;
+  --border2: #1a1e27;
+  --text: #dde2ec;
+  --muted: #606878;
+  --dim: #323845;
+  --green: #34d399;
+  --green2: rgba(52,211,153,0.12);
+  --green3: rgba(52,211,153,0.06);
+  --yellow: #fbbf24;
+  --yellow2: rgba(251,191,36,0.1);
+  --red: #fb7185;
+  --red2: rgba(251,113,133,0.1);
+  --orange: #f97316;
+  --orange2: rgba(249,115,22,0.1);
+  --blue: #818cf8;
+  --blue2: rgba(129,140,248,0.1);
+  --mono: 'DM Mono', monospace;
+  --head: 'Syne', sans-serif;
+  --body: 'Outfit', sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 13.5px;
+  line-height: 1.55;
+  min-height: 100vh;
+}
+
+/* SIDEBAR NAV */
+.layout { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--s1);
+  border-right: 1px solid var(--border2);
+  padding: 28px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  padding: 0 20px 20px;
+  border-bottom: 1px solid var(--border2);
+  margin-bottom: 16px;
+}
+.sidebar-brand {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--green);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.sidebar-title {
+  font-family: var(--head);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.nav-group {
+  padding: 0 12px;
+  margin-bottom: 8px;
+}
+.nav-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding: 4px 8px;
+  margin-bottom: 4px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted);
+  transition: all 0.15s;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+.nav-item:hover { background: var(--s2); color: var(--text); }
+.nav-item.active { background: var(--s2); color: var(--text); border-color: var(--border); }
+.nav-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+.nav-cpl {
+  font-family: var(--mono);
+  font-size: 9px;
+  margin-left: auto;
+  color: var(--muted);
+}
+
+/* MAIN CONTENT */
+.main {
+  flex: 1;
+  padding: 36px 40px;
+  max-width: 920px;
+  overflow: hidden;
+}
+
+/* PAGE HEADER */
+.page-header { margin-bottom: 36px; }
+.page-tag { font-family: var(--mono); font-size: 10px; color: var(--green); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-family: var(--head); font-size: 26px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }
+.page-sub { color: var(--muted); font-size: 13px; margin-top: 8px; }
+
+/* PROGRAM CARD */
+.prog-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  scroll-margin-top: 24px;
+}
+
+.prog-header {
+  padding: 20px 24px 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--border2);
+  cursor: pointer;
+  user-select: none;
+}
+.prog-header:hover { background: var(--s2); }
+
+.prog-left { display: flex; align-items: flex-start; gap: 14px; }
+.prog-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.prog-name { font-family: var(--head); font-size: 16px; font-weight: 700; line-height: 1.2; }
+.prog-code { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+.prog-stats {
+  display: flex; gap: 20px; align-items: center;
+}
+.stat-block { text-align: right; }
+.stat-val { font-family: var(--mono); font-size: 18px; font-weight: 500; line-height: 1; }
+.stat-lbl { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 3px; }
+
+.chevron { color: var(--muted); font-size: 14px; transition: transform 0.2s; margin-top: 2px; }
+.prog-card.open .chevron { transform: rotate(180deg); }
+
+/* PROG BODY */
+.prog-body { display: none; }
+.prog-card.open .prog-body { display: block; }
+
+.prog-section { padding: 20px 24px; border-bottom: 1px solid var(--border2); }
+.prog-section:last-child { border-bottom: none; }
+.section-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
+
+/* ALERT BOX */
+.alert {
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  margin-bottom: 10px;
+  border: 1px solid transparent;
+  line-height: 1.5;
+}
+.alert strong { font-weight: 600; }
+.alert-red { background: var(--red2); border-color: rgba(251,113,133,0.2); color: #fca5a5; }
+.alert-green { background: var(--green3); border-color: rgba(52,211,153,0.15); color: #6ee7b7; }
+.alert-yellow { background: var(--yellow2); border-color: rgba(251,191,36,0.15); color: #fde68a; }
+.alert-orange { background: var(--orange2); border-color: rgba(249,115,22,0.15); color: #fdba74; }
+.alert-blue { background: var(--blue2); border-color: rgba(129,140,248,0.15); color: #a5b4fc; }
+
+/* AD TABLE */
+.ad-table { width: 100%; border-collapse: collapse; }
+.ad-table th {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 400;
+  background: var(--s2);
+  border-bottom: 1px solid var(--border2);
+}
+.ad-table th.r { text-align: right; }
+.ad-table td { padding: 10px 10px; border-bottom: 1px solid var(--border2); vertical-align: middle; font-size: 12px; }
+.ad-table td.r { text-align: right; font-family: var(--mono); font-size: 11px; }
+.ad-table tbody tr:last-child td { border-bottom: none; }
+.ad-table tbody tr:hover { background: var(--s2); }
+
+.ad-name { font-family: var(--mono); font-size: 11px; color: var(--text); }
+.ad-status {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.s-active { background: rgba(52,211,153,0.1); color: var(--green); border: 1px solid rgba(52,211,153,0.15); }
+.s-inactive { background: rgba(96,104,120,0.15); color: var(--muted); border: 1px solid var(--border2); }
+.s-nd { background: rgba(251,191,36,0.08); color: var(--yellow); border: 1px solid rgba(251,191,36,0.15); }
+
+.cpl-badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 2px 9px;
+  border-radius: 20px;
+  display: inline-block;
+}
+.cpl-a { background: rgba(52,211,153,0.1); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+.cpl-b { background: rgba(251,191,36,0.08); color: var(--yellow); border: 1px solid rgba(251,191,36,0.15); }
+.cpl-c { background: rgba(251,113,133,0.08); color: var(--red); border: 1px solid rgba(251,113,133,0.15); }
+
+/* FREQ METER */
+.freq-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.freq-val {
+  font-family: var(--mono);
+  font-size: 11px;
+  width: 26px;
+}
+.freq-track {
+  flex: 1;
+  max-width: 60px;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+}
+.freq-fill { height: 100%; border-radius: 2px; }
+
+/* ACTION CHIPS */
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.action-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  border: 1px solid;
+  line-height: 1.3;
+}
+.chip-red { background: var(--red2); border-color: rgba(251,113,133,0.2); color: #fca5a5; }
+.chip-green { background: var(--green3); border-color: rgba(52,211,153,0.15); color: #6ee7b7; }
+.chip-yellow { background: var(--yellow2); border-color: rgba(251,191,36,0.15); color: #fde68a; }
+.chip-blue { background: var(--blue2); border-color: rgba(129,140,248,0.15); color: #a5b4fc; }
+.chip-orange { background: var(--orange2); border-color: rgba(249,115,22,0.15); color: #fdba74; }
+.chip-icon { font-size: 14px; }
+
+/* PRIORITY BADGE */
+.prio-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+.prio-escalar { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.25); color: var(--green); }
+.prio-revisar { background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.2); color: var(--yellow); }
+.prio-pausar { background: rgba(251,113,133,0.08); border-color: rgba(251,113,133,0.2); color: var(--red); }
+.prio-mantener { background: rgba(96,104,120,0.1); border-color: var(--border); color: var(--muted); }
+
+/* MINI CHART */
+.lead-share {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  gap: 1px;
+  margin-top: 6px;
+}
+.lead-seg { height: 100%; border-radius: 1px; }
+
+/* FOOTER */
+footer {
+  border-top: 1px solid var(--border2);
+  padding: 20px 0;
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+.footer-txt { font-family: var(--mono); font-size: 9px; color: var(--dim); letter-spacing: 0.1em; }
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.prog-body { animation: slide-down 0.2s ease; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-brand">MÁS UNIACC</div>
+    <div class="sidebar-title">Deep Dive</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-label">🟢 Escalar</div>
+    <a class="nav-item" href="#lengua"><span class="nav-dot" style="background:#34d399"></span>Lengua de Señas<span class="nav-cpl">$218</span></a>
+    <a class="nav-item" href="#cine"><span class="nav-dot" style="background:#34d399"></span>Crítica de Cine<span class="nav-cpl">$690</span></a>
+    <a class="nav-item" href="#psico"><span class="nav-dot" style="background:#34d399"></span>Psicólogos<span class="nav-cpl">$1.017</span></a>
+    <a class="nav-item" href="#home"><span class="nav-dot" style="background:#34d399"></span>Home Studio<span class="nav-cpl">$1.263</span></a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-label">🟡 Revisar</div>
+    <a class="nav-item" href="#familia"><span class="nav-dot" style="background:#fbbf24"></span>Derecho de Familia<span class="nav-cpl">$1.945</span></a>
+    <a class="nav-item" href="#dinamica"><span class="nav-dot" style="background:#fbbf24"></span>Dinámica Escénica<span class="nav-cpl">$2.418</span></a>
+    <a class="nav-item" href="#cursoia"><span class="nav-dot" style="background:#fbbf24"></span>Curso IA<span class="nav-cpl">$2.071</span></a>
+    <a class="nav-item" href="#storytelling"><span class="nav-dot" style="background:#fbbf24"></span>Storytelling Jurídico<span class="nav-cpl">$2.697</span></a>
+    <a class="nav-item" href="#mktdig"><span class="nav-dot" style="background:#fbbf24"></span>Marketing Digital<span class="nav-cpl">$3.404</span></a>
+    <a class="nav-item" href="#comint"><span class="nav-dot" style="background:#fbbf24"></span>Com. Internas<span class="nav-cpl">$4.920</span></a>
+    <a class="nav-item" href="#psicoterapia"><span class="nav-dot" style="background:#fbbf24"></span>Psicoterapia Online<span class="nav-cpl">$3.444</span></a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-label">🔴 Urgente</div>
+    <a class="nav-item" href="#elearning"><span class="nav-dot" style="background:#fb7185"></span>E-learning<span class="nav-cpl">$7.475</span></a>
+    <a class="nav-item" href="#compliance"><span class="nav-dot" style="background:#fb7185"></span>Compliance<span class="nav-cpl">$9.585</span></a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="page-header">
+    <div class="page-tag">MÁS Educación Continua · Meta Ads · Mar 2026</div>
+    <h1>Análisis por Programa</h1>
+    <div class="page-sub">Desglose de leads, anuncios y acciones prioritarias · 28 feb – 29 mar 2026</div>
+  </div>
+
+  <!-- ============================
+       LENGUA DE SEÑAS
+  ============================= -->
+  <div class="prog-card open" id="lengua">
+    <div class="prog-header" onclick="toggle(this)">
+      <div class="prog-left">
+        <div class="prog-icon" style="background:rgba(52,211,153,0.1)">🤟</div>
+        <div>
+          <div class="prog-name">Lengua de Señas Chilena</div>
+          <div class="prog-code">CLSCI1AR / CDHCL1AR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="prog-stats">
+          <div class="stat-block"><div class="stat-val" style="color:var(--green)">257</div><div class="stat-lbl">Leads</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--text)">$218</div><div class="stat-lbl">CPL</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--muted)">$55K</div><div class="stat-lbl">Gasto</div></div>
+        </div>
+        <span class="prio-badge prio-escalar">Escalar urgente</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="prog-body">
+      <div class="prog-section">
+        <div class="section-label">Diagnóstico</div>
+        <div class="alert alert-red"><strong>⚠️ Los 3 ad sets están en not_delivering.</strong> CURSEÑ1 y CURSEÑ2 ($2.500/día c/u) agotaron presupuesto generando leads a $184 y $272 CPL — el mejor ratio de toda la cuenta. El problema no es el rendimiento, es el presupuesto insuficiente.</div>
+        <div class="alert alert-red"><strong>🚨 CURSEÑ3 es el culpable del CPL alto.</strong> Con $10.000/día y solo 7 leads ($5.502 CPL), este ad set consume 80% del presupuesto del programa sin rendir. Hay que pausarlo.</div>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Anuncios activos</div>
+        <table class="ad-table">
+          <thead>
+            <tr><th>Anuncio</th><th>Conjunto</th><th class="r">Leads</th><th class="r">CPL</th><th class="r">CTR</th><th class="r">Freq</th><th>Estado</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="ad-name">CLSCI1AR|Img|InforSP|2</td><td style="font-size:11px;color:var(--muted)">CURSEÑ1</td><td class="r">152</td><td class="r"><span class="cpl-badge cpl-a">$182</span></td><td class="r">0.96%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">1.6</span><div class="freq-track"><div class="freq-fill" style="width:27%;background:var(--green)"></div></div></div></td><td><span class="ad-status s-nd">Paused</span></td></tr>
+            <tr><td class="ad-name">CLSCI1AR|Img|InforSP|2</td><td style="font-size:11px;color:var(--muted)">CURSEÑ2</td><td class="r">103</td><td class="r"><span class="cpl-badge cpl-a">$272</span></td><td class="r">0.84%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">1.8</span><div class="freq-track"><div class="freq-fill" style="width:30%;background:var(--green)"></div></div></div></td><td><span class="ad-status s-nd">Paused</span></td></tr>
+            <tr><td class="ad-name">CDHCL1AR|Img|InforSP|2</td><td style="font-size:11px;color:var(--muted)">CURSEÑ2</td><td class="r">1</td><td class="r"><span class="cpl-badge cpl-a">$10</span></td><td class="r">4.76%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">1.1</span><div class="freq-track"><div class="freq-fill" style="width:18%;background:var(--green)"></div></div></div></td><td><span class="ad-status s-nd">Paused</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Acciones inmediatas</div>
+        <div class="actions">
+          <div class="action-chip chip-red"><span class="chip-icon">⛔</span><span>Pausar CURSEÑ3 hoy — $10K/día mal invertido</span></div>
+          <div class="action-chip chip-green"><span class="chip-icon">📈</span><span>Reactivar CURSEÑ1 y CURSEÑ2 con $5.000/día c/u</span></div>
+          <div class="action-chip chip-blue"><span class="chip-icon">🎨</span><span>Agregar 2 anuncios nuevos — la creativa actual es única (riesgo)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CRITICA DE CINE -->
+  <div class="prog-card open" id="cine">
+    <div class="prog-header" onclick="toggle(this)">
+      <div class="prog-left">
+        <div class="prog-icon" style="background:rgba(52,211,153,0.08)">🎬</div>
+        <div>
+          <div class="prog-name">Crítica de Cine</div>
+          <div class="prog-code">CACCI1AR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="prog-stats">
+          <div class="stat-block"><div class="stat-val" style="color:var(--green)">128</div><div class="stat-lbl">Leads</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--text)">$690</div><div class="stat-lbl">CPL</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--muted)">$88K</div><div class="stat-lbl">Gasto</div></div>
+        </div>
+        <span class="prio-badge prio-escalar">Escalar</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="prog-body">
+      <div class="prog-section">
+        <div class="section-label">Diagnóstico</div>
+        <div class="alert alert-green"><strong>✅ Campaña muy sana.</strong> CACCI1AR1 ($570 CPL) carga el 84% de los leads. El creativo CACCI2AR4 hace el trabajo: 106 de 128 leads al mínimo CPL. CACCI1AR2 ($1.532 CPL) está drenando presupuesto sin rendir proporcionalmente.</div>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Anuncios — ranking de eficiencia</div>
+        <table class="ad-table">
+          <thead>
+            <tr><th>Anuncio</th><th>Conjunto</th><th class="r">Leads</th><th class="r">CPL</th><th class="r">CTR</th><th class="r">Freq</th><th>Estado</th></tr>
+          </thead>
+          <tbody>
+            <tr style="background:rgba(52,211,153,0.03)"><td class="ad-name">202603|CACCI2AR4 ⭐</td><td style="font-size:11px;color:var(--muted)">CACCI1AR1</td><td class="r">106</td><td class="r"><span class="cpl-badge cpl-a">$547</span></td><td class="r">0.54%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">3.1</span><div class="freq-track"><div class="freq-fill" style="width:52%;background:var(--green)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">202603|CACCI2AR3</td><td style="font-size:11px;color:var(--muted)">CACCI1AR1</td><td class="r">2</td><td class="r"><span class="cpl-badge cpl-a">$616</span></td><td class="r">0.73%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">1.2</span><div class="freq-track"><div class="freq-fill" style="width:20%;background:var(--green)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">202603|CACCI2AR4</td><td style="font-size:11px;color:var(--muted)">CACCI1AR2</td><td class="r">11</td><td class="r"><span class="cpl-badge cpl-b">$957</span></td><td class="r">0.53%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--yellow)">1.8</span><div class="freq-track"><div class="freq-fill" style="width:30%;background:var(--yellow)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">202603|CACCI2AR3</td><td style="font-size:11px;color:var(--muted)">CACCI1AR2</td><td class="r">8</td><td class="r"><span class="cpl-badge cpl-c">$2.157</span></td><td class="r">0.36%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--yellow)">2.4</span><div class="freq-track"><div class="freq-fill" style="width:40%;background:var(--yellow)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Acciones</div>
+        <div class="actions">
+          <div class="action-chip chip-green"><span class="chip-icon">📈</span><span>Aumentar presupuesto CACCI1AR1 de $2.500 → $5.000/día</span></div>
+          <div class="action-chip chip-yellow"><span class="chip-icon">🔎</span><span>Revisar por qué CACCI2AR3 en CACCI1AR2 tiene CTR bajo (0.36%) — posible ángulo débil</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PSICOLOGOS -->
+  <div class="prog-card open" id="psico">
+    <div class="prog-header" onclick="toggle(this)">
+      <div class="prog-left">
+        <div class="prog-icon" style="background:rgba(52,211,153,0.08)">🧠</div>
+        <div>
+          <div class="prog-name">Marca Personal Psicólogos</div>
+          <div class="prog-code">CMPPR1AR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="prog-stats">
+          <div class="stat-block"><div class="stat-val" style="color:var(--green)">175</div><div class="stat-lbl">Leads</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--text)">$1.017</div><div class="stat-lbl">CPL</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--muted)">$178K</div><div class="stat-lbl">Gasto</div></div>
+        </div>
+        <span class="prio-badge prio-escalar">Escalar</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="prog-body">
+      <div class="prog-section">
+        <div class="section-label">Diagnóstico</div>
+        <div class="alert alert-yellow"><strong>⚠️ Un solo anuncio carga el 100% de los leads.</strong> CMPPR1AR|Img|InforSP|2 hace todo el trabajo — 175 leads, $1.017 CPL, frecuencia 3.9. Sin backup creativo, si este anuncio se fatiga, la campaña cae en picada. El anuncio InforSP|1 está inactivo (0 resultados).</div>
+        <div class="alert alert-green"><strong>✅ CPL sólido y estable.</strong> $9.400/día de presupuesto, 175 leads en ~27 días. El algoritmo está aprendido bien. Hay espacio para escalar presupuesto 30-40% sin riesgo de salir del periodo de aprendizaje.</div>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Anuncios</div>
+        <table class="ad-table">
+          <thead>
+            <tr><th>Anuncio</th><th class="r">Leads</th><th class="r">CPL</th><th class="r">CTR</th><th class="r">Freq</th><th>Estado</th></tr>
+          </thead>
+          <tbody>
+            <tr style="background:rgba(52,211,153,0.03)"><td class="ad-name">CMPPR1AR|Img|InforSP|2 ⭐</td><td class="r">175</td><td class="r"><span class="cpl-badge cpl-a">$1.017</span></td><td class="r">0.72%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--yellow)">3.9</span><div class="freq-track"><div class="freq-fill" style="width:65%;background:var(--yellow)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">CMPPR1AR|Img|InforSP|1</td><td class="r">—</td><td class="r"><span class="cpl-badge cpl-b" style="opacity:0.5">Sin datos</span></td><td class="r">—</td><td class="r">—</td><td><span class="ad-status s-inactive">Inactivo</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Acciones</div>
+        <div class="actions">
+          <div class="action-chip chip-green"><span class="chip-icon">📈</span><span>Escalar presupuesto de $9.400 → $13.000/día (+38%)</span></div>
+          <div class="action-chip chip-blue"><span class="chip-icon">🎨</span><span>Urgente: agregar 2 anuncios nuevos antes de que freq supere 5</span></div>
+          <div class="action-chip chip-yellow"><span class="chip-icon">🔁</span><span>Activar InforSP|1 para tener backup y test de variación</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME STUDIO -->
+  <div class="prog-card" id="home">
+    <div class="prog-header" onclick="toggle(this)">
+      <div class="prog-left">
+        <div class="prog-icon" style="background:rgba(52,211,153,0.08)">🎚️</div>
+        <div>
+          <div class="prog-name">Home Studio</div>
+          <div class="prog-code">CHAMI1AR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="prog-stats">
+          <div class="stat-block"><div class="stat-val" style="color:var(--green)">247</div><div class="stat-lbl">Leads</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--text)">$1.263</div><div class="stat-lbl">CPL</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--muted)">$312K</div><div class="stat-lbl">Gasto</div></div>
+        </div>
+        <span class="prio-badge prio-mantener">Mantener</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="prog-body">
+      <div class="prog-section">
+        <div class="section-label">Diagnóstico</div>
+        <div class="alert alert-yellow"><strong>⚠️ Frecuencia 4.2 en el anuncio principal.</strong> CHAMI1AR|InforSP|1 carga 236/247 leads con freq 4.2 — zona de atención. El segundo anuncio InforSP|2 tiene solo 11 leads y freq 1.8, indicando que el algoritmo no lo está priorizando. Hay que agregar creatividades para que Meta rote.</div>
+        <div class="alert alert-orange"><strong>📅 Fecha inicio: 5 de mayo.</strong> Quedan ~35 días. El ritmo actual (247 leads en 42 días) es bueno, pero si el anuncio se fatiga ahora el cierre podría verse afectado.</div>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Anuncios</div>
+        <table class="ad-table">
+          <thead><tr><th>Anuncio</th><th class="r">Leads</th><th class="r">CPL</th><th class="r">CTR</th><th class="r">Freq</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td class="ad-name">CHAMI1AR|Img|InforSP|1 ⭐</td><td class="r">236</td><td class="r"><span class="cpl-badge cpl-a">$1.261</span></td><td class="r">0.52%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--yellow)">4.2</span><div class="freq-track"><div class="freq-fill" style="width:70%;background:var(--yellow)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">CHAMI1AR|Img|InforSP|2</td><td class="r">11</td><td class="r"><span class="cpl-badge cpl-a">$1.305</span></td><td class="r">0.49%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">1.8</span><div class="freq-track"><div class="freq-fill" style="width:30%;background:var(--green)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Acciones</div>
+        <div class="actions">
+          <div class="action-chip chip-blue"><span class="chip-icon">🎨</span><span>Agregar al menos 2 creatividades nuevas esta semana</span></div>
+          <div class="action-chip chip-yellow"><span class="chip-icon">📊</span><span>Monitorear CTR semana a semana — si cae de 0.4% es señal de fatiga</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DERECHO DE FAMILIA -->
+  <div class="prog-card" id="familia">
+    <div class="prog-header" onclick="toggle(this)">
+      <div class="prog-left">
+        <div class="prog-icon" style="background:rgba(251,191,36,0.08)">⚖️</div>
+        <div>
+          <div class="prog-name">Derecho de Familia</div>
+          <div class="prog-code">DDFMI1AR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="prog-stats">
+          <div class="stat-block"><div class="stat-val" style="color:var(--yellow)">205</div><div class="stat-lbl">Leads</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--text)">$1.945</div><div class="stat-lbl">CPL</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--muted)">$399K</div><div class="stat-lbl">Gasto</div></div>
+        </div>
+        <span class="prio-badge prio-revisar">Revisar frecuencia</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="prog-body">
+      <div class="prog-section">
+        <div class="section-label">Diagnóstico</div>
+        <div class="alert alert-red"><strong>🚨 DIPFAM2 tiene frecuencia 6.2 — zona de fatiga severa.</strong> Con $6.250/día gastando 92 leads a $2.029 CPL, el público ya se saturó. Esto explica por qué el CPL de DIPFAM2 es 25% más caro que DIPFAM1. Sin acción, el CPL seguirá subiendo.</div>
+        <div class="alert alert-green"><strong>✅ El creativo InforSP|1 es el ganador claro.</strong> $1.508 CPL vs $1.866-$2.372 de InforSP|2 e InforSP|3. Concentrar presupuesto en InforSP|1 puede reducir el CPL promedio del programa en ~$200-300.</div>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Anuncios — ranking</div>
+        <table class="ad-table">
+          <thead><tr><th>Anuncio</th><th>Ad Set</th><th class="r">Leads</th><th class="r">CPL</th><th class="r">CTR</th><th class="r">Freq</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr style="background:rgba(52,211,153,0.03)"><td class="ad-name">DDFMI1AR|Img|InforSP|1 ⭐</td><td style="font-size:11px;color:var(--muted)">DIPFAM1</td><td class="r">76</td><td class="r"><span class="cpl-badge cpl-a">$1.508</span></td><td class="r">0.48%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--yellow)">3.5</span><div class="freq-track"><div class="freq-fill" style="width:58%;background:var(--yellow)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">DDFMI1AR|Img|InforSP|2</td><td style="font-size:11px;color:var(--muted)">DIPFAM2</td><td class="r">68</td><td class="r"><span class="cpl-badge cpl-a">$1.866</span></td><td class="r">0.39%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--red)">5.0</span><div class="freq-track"><div class="freq-fill" style="width:83%;background:var(--red)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">DDFMI1AR|Img|InforSP|3</td><td style="font-size:11px;color:var(--muted)">DIPFAM2</td><td class="r">24</td><td class="r"><span class="cpl-badge cpl-b">$2.372</span></td><td class="r">0.42%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--yellow)">3.5</span><div class="freq-track"><div class="freq-fill" style="width:58%;background:var(--yellow)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Acciones</div>
+        <div class="actions">
+          <div class="action-chip chip-red"><span class="chip-icon">🔽</span><span>Reducir presupuesto DIPFAM2 de $6.250 → $3.000/día</span></div>
+          <div class="action-chip chip-green"><span class="chip-icon">🔼</span><span>Aumentar DIPFAM1 a $7.000/día — mejor CPL y menor freq</span></div>
+          <div class="action-chip chip-blue"><span class="chip-icon">🎨</span><span>Crear variación de InforSP|1 para aliviar la fatiga de DIPFAM2</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DINAMICA ESCENICA -->
+  <div class="prog-card" id="dinamica">
+    <div class="prog-header" onclick="toggle(this)">
+      <div class="prog-left">
+        <div class="prog-icon" style="background:rgba(251,191,36,0.08)">🎭</div>
+        <div>
+          <div class="prog-name">Dinámica y Espacialidad Escénica</div>
+          <div class="prog-code">DDESE1SR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="prog-stats">
+          <div class="stat-block"><div class="stat-val" style="color:var(--yellow)">250</div><div class="stat-lbl">Leads</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--text)">$2.418</div><div class="stat-lbl">CPL</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--muted)">$509K</div><div class="stat-lbl">Gasto</div></div>
+        </div>
+        <span class="prio-badge prio-mantener">Mantener</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="prog-body">
+      <div class="prog-section">
+        <div class="section-label">Diagnóstico</div>
+        <div class="alert alert-green"><strong>✅ Dos ad sets funcionando bien.</strong> "Maquillaje" (inicio 9 mar) tiene CPL $1.610 — significativamente mejor que el original ($2.477 CPL). El targeting o ángulo creativo diferente está ayudando. Consolidar presupuesto hacia "Maquillaje".</div>
+        <div class="alert alert-blue"><strong>📅 Inicio 5 de junio.</strong> Quedan ~67 días. Ritmo de 250 leads en 42 días es consistente. Con 2 ad sets activos hay diversidad saludable.</div>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Ad Sets</div>
+        <table class="ad-table">
+          <thead><tr><th>Ad Set</th><th class="r">Leads</th><th class="r">CPL</th><th class="r">Ppto/día</th><th class="r">Freq</th><th>Inicio</th></tr></thead>
+          <tbody>
+            <tr style="background:rgba(52,211,153,0.03)"><td class="ad-name">DIPDIN1|Adv+ Maquillaje ⭐</td><td class="r">127</td><td class="r"><span class="cpl-badge cpl-a">$1.610</span></td><td class="r">$10.000</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--yellow)">4.4</span><div class="freq-track"><div class="freq-fill" style="width:73%;background:var(--yellow)"></div></div></div></td><td style="font-size:11px;color:var(--muted)">09 Mar</td></tr>
+            <tr><td class="ad-name">202602|DIPDIN1|Int|Adv+</td><td class="r">123</td><td class="r"><span class="cpl-badge cpl-b">$2.477</span></td><td class="r">$10.000</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--yellow)">3.9</span><div class="freq-track"><div class="freq-fill" style="width:65%;background:var(--yellow)"></div></div></div></td><td style="font-size:11px;color:var(--muted)">16 Feb</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Acciones</div>
+        <div class="actions">
+          <div class="action-chip chip-green"><span class="chip-icon">🔼</span><span>Mover $3.000/día del DIPDIN1 original al Maquillaje</span></div>
+          <div class="action-chip chip-blue"><span class="chip-icon">🎨</span><span>Rotar creatividades en ambos — freq 4+ requiere refresh</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CURSO IA -->
+  <div class="prog-card" id="cursoia">
+    <div class="prog-header" onclick="toggle(this)">
+      <div class="prog-left">
+        <div class="prog-icon" style="background:rgba(129,140,248,0.08)">🤖</div>
+        <div>
+          <div class="prog-name">Curso IA</div>
+          <div class="prog-code">CIAHD1AR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="prog-stats">
+          <div class="stat-block"><div class="stat-val" style="color:var(--yellow)">87</div><div class="stat-lbl">Leads</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--text)">$2.071</div><div class="stat-lbl">CPL</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--muted)">$180K</div><div class="stat-lbl">Gasto</div></div>
+        </div>
+        <span class="prio-badge prio-revisar">Optimizar mix</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="prog-body">
+      <div class="prog-section">
+        <div class="section-label">Diagnóstico</div>
+        <div class="alert alert-yellow"><strong>🔎 Gran diferencia de CPL entre creatividades.</strong> InforSP|2 ($1.341 CPL) es 2x más eficiente que InforSP|1 ($2.841 CPL) con CTR más alto (0.70% vs 0.48%). InforSP|3 ($6.106 CPL) es un outlier que está drenando presupuesto.</div>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Anuncios</div>
+        <table class="ad-table">
+          <thead><tr><th>Anuncio</th><th class="r">Leads</th><th class="r">CPL</th><th class="r">CTR</th><th class="r">Freq</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr style="background:rgba(52,211,153,0.03)"><td class="ad-name">CIAHD1AR|Img|InforSP|2 ⭐</td><td class="r">49</td><td class="r"><span class="cpl-badge cpl-a">$1.341</span></td><td class="r">0.70%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">2.8</span><div class="freq-track"><div class="freq-fill" style="width:47%;background:var(--green)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">CIAHD1AR|Img|InforSP|1</td><td class="r">36</td><td class="r"><span class="cpl-badge cpl-b">$2.841</span></td><td class="r">0.48%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">2.7</span><div class="freq-track"><div class="freq-fill" style="width:45%;background:var(--green)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">CIAHD1AR|Img|InforSP|3</td><td class="r">2</td><td class="r"><span class="cpl-badge cpl-c">$6.106</span></td><td class="r">0.45%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">1.5</span><div class="freq-track"><div class="freq-fill" style="width:25%;background:var(--green)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Acciones</div>
+        <div class="actions">
+          <div class="action-chip chip-red"><span class="chip-icon">⛔</span><span>Pausar InforSP|3 — $6.106 CPL sin volumen</span></div>
+          <div class="action-chip chip-green"><span class="chip-icon">⭐</span><span>Priorizar InforSP|2 — crear variación del mismo ángulo</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORYTELLING -->
+  <div class="prog-card" id="storytelling">
+    <div class="prog-header" onclick="toggle(this)">
+      <div class="prog-left">
+        <div class="prog-icon" style="background:rgba(251,191,36,0.08)">📜</div>
+        <div>
+          <div class="prog-name">Storytelling Jurídico</div>
+          <div class="prog-code">TSJAN1DR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="prog-stats">
+          <div class="stat-block"><div class="stat-val" style="color:var(--yellow)">35</div><div class="stat-lbl">Leads</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--text)">$2.697</div><div class="stat-lbl">CPL</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--muted)">$94K</div><div class="stat-lbl">Gasto</div></div>
+        </div>
+        <span class="prio-badge prio-revisar">Escalar — poco tiempo</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="prog-body">
+      <div class="prog-section">
+        <div class="section-label">Diagnóstico</div>
+        <div class="alert alert-orange"><strong>📅 Solo 11 días de campaña activa.</strong> Inicio 18 de marzo, programa inicia 15 mayo. Quedan ~46 días. Con $7.692/día y CPL $2.697, el volumen actual es bajo para cumplir una meta de matrículas. El creativo InforCP|2 está dominando (30/35 leads).</div>
+        <div class="alert alert-green"><strong>✅ CPL aceptable para el nicho.</strong> Storytelling Jurídico es un programa nicho — CPL de $2.697 en un segmento de abogados es razonable. El problema es el volumen, no la eficiencia.</div>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Anuncios</div>
+        <table class="ad-table">
+          <thead><tr><th>Anuncio</th><th class="r">Leads</th><th class="r">CPL</th><th class="r">CTR</th><th class="r">Freq</th></tr></thead>
+          <tbody>
+            <tr style="background:rgba(52,211,153,0.03)"><td class="ad-name">TSJAN1DR|Img|InforCP|2 ⭐</td><td class="r">30</td><td class="r"><span class="cpl-badge cpl-b">$2.635</span></td><td class="r">0.45%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">2.6</span><div class="freq-track"><div class="freq-fill" style="width:43%;background:var(--green)"></div></div></div></td></tr>
+            <tr><td class="ad-name">TSJAN1DR|Img|InforCP|1</td><td class="r">5</td><td class="r"><span class="cpl-badge cpl-b">$3.068</span></td><td class="r">0.42%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">1.7</span><div class="freq-track"><div class="freq-fill" style="width:28%;background:var(--green)"></div></div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Acciones</div>
+        <div class="actions">
+          <div class="action-chip chip-green"><span class="chip-icon">📈</span><span>Subir presupuesto de $7.692 → $12.000/día para ganar volumen</span></div>
+          <div class="action-chip chip-blue"><span class="chip-icon">🎨</span><span>Agregar 1 creatividad nueva basada en el ángulo de InforCP|2</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PSICOTERAPIA ONLINE -->
+  <div class="prog-card" id="psicoterapia">
+    <div class="prog-header" onclick="toggle(this)">
+      <div class="prog-left">
+        <div class="prog-icon" style="background:rgba(251,191,36,0.08)">💬</div>
+        <div>
+          <div class="prog-name">Psicoterapia Online</div>
+          <div class="prog-code">DPODA1AR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="prog-stats">
+          <div class="stat-block"><div class="stat-val" style="color:var(--yellow)">139</div><div class="stat-lbl">Leads</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--text)">$3.444</div><div class="stat-lbl">CPL</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--muted)">$479K</div><div class="stat-lbl">Gasto</div></div>
+        </div>
+        <span class="prio-badge prio-revisar">Fatiga creativa</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="prog-body">
+      <div class="prog-section">
+        <div class="section-label">Diagnóstico</div>
+        <div class="alert alert-red"><strong>🚨 DIPSICONL1 tiene frecuencia 5.1 con $22.000/día.</strong> El anuncio InforSP|4 está saturando el público. El CPL de $3.510 es aceptable hoy, pero la frecuencia alta predice aumento. DIPSICONL2 ($10.000/día) fue desactivado, reduciendo la presión sobre el mismo público.</div>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Anuncios — ad set DIPSICONL1</div>
+        <table class="ad-table">
+          <thead><tr><th>Anuncio</th><th class="r">Leads</th><th class="r">CPL</th><th class="r">CTR</th><th class="r">Freq</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td class="ad-name">DPODA1AR|Img|InforSP|3</td><td class="r">6</td><td class="r"><span class="cpl-badge cpl-b">$3.216</span></td><td class="r">0.62%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">2.0</span><div class="freq-track"><div class="freq-fill" style="width:33%;background:var(--green)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr style="background:rgba(251,113,133,0.03)"><td class="ad-name">DPODA1AR|Img|InforSP|4 ⚠️</td><td class="r">97</td><td class="r"><span class="cpl-badge cpl-b">$3.510</span></td><td class="r">0.44%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--red)">4.8</span><div class="freq-track"><div class="freq-fill" style="width:80%;background:var(--red)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">DPODA1AR|Img|InforSP|1</td><td class="r">1</td><td class="r"><span class="cpl-badge cpl-b">$3.879</span></td><td class="r">0.37%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">1.5</span><div class="freq-track"><div class="freq-fill" style="width:25%;background:var(--green)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">DPODA1AR|Img|InforSP|2</td><td class="r">1</td><td class="r"><span class="cpl-badge cpl-a">$2.018</span></td><td class="r">0.28%</td><td class="r"><div class="freq-bar"><span class="freq-val" style="color:var(--green)">1.5</span><div class="freq-track"><div class="freq-fill" style="width:25%;background:var(--green)"></div></div></div></td><td><span class="ad-status s-active">Activo</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Acciones</div>
+        <div class="actions">
+          <div class="action-chip chip-blue"><span class="chip-icon">🎨</span><span>Agregar 2-3 anuncios nuevos al DIPSICONL1 esta semana</span></div>
+          <div class="action-chip chip-yellow"><span class="chip-icon">🔁</span><span>Reactivar DIPSICONL2 con creatividades frescas para ampliar público</span></div>
+          <div class="action-chip chip-orange"><span class="chip-icon">📊</span><span>Target: bajar frecuencia de 5.1 → 3.5 en 2 semanas</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARKETING DIGITAL -->
+  <div class="prog-card" id="mktdig">
+    <div class="prog-header" onclick="toggle(this)">
+      <div class="prog-left">
+        <div class="prog-icon" style="background:rgba(251,191,36,0.08)">📱</div>
+        <div>
+          <div class="prog-name">Marketing Digital</div>
+          <div class="prog-code">DCMDI1AR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="prog-stats">
+          <div class="stat-block"><div class="stat-val" style="color:var(--yellow)">183</div><div class="stat-lbl">Leads</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--text)">$3.404</div><div class="stat-lbl">CPL</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--muted)">$623K</div><div class="stat-lbl">Gasto</div></div>
+        </div>
+        <span class="prio-badge prio-revisar">Consolidar</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="prog-body">
+      <div class="prog-section">
+        <div class="section-label">Diagnóstico</div>
+        <div class="alert alert-yellow"><strong>🔎 5 ad sets activos — demasiada fragmentación.</strong> El presupuesto de $17.250/día está repartido en 4 grupos que compiten entre sí. DCMDI1AR2 ($6.250/día, 61 leads) es el claro ganador. Los grupos RM/no RM a $2.000/día cada uno no tienen suficiente presupuesto para aprender.</div>
+        <div class="alert alert-red"><strong>⛔ El video DCMDI1AR|Vid|InforCP|1 no justifica el gasto.</strong> $3.889 CPL, solo 10 leads, CTR bajo. Pausar libera $5.000/día.</div>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Ad Sets — comparativa</div>
+        <table class="ad-table">
+          <thead><tr><th>Ad Set</th><th class="r">Leads</th><th class="r">CPL</th><th class="r">Ppto/día</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr style="background:rgba(52,211,153,0.03)"><td class="ad-name">202602|DCMDI1AR2 ⭐</td><td class="r">61</td><td class="r"><span class="cpl-badge cpl-b">$3.061</span></td><td class="r">$6.250</td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">AD Group 4: Mkt Digital RM</td><td class="r">17</td><td class="r"><span class="cpl-badge cpl-b">$3.195</span></td><td class="r">$2.000</td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">202602|DCMDI1AR3</td><td class="r">29</td><td class="r"><span class="cpl-badge cpl-b">$3.995</span></td><td class="r">$5.000</td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr style="background:rgba(251,113,133,0.03)"><td class="ad-name">AD Group 4: Mkt Digital no RM</td><td class="r">7</td><td class="r"><span class="cpl-badge cpl-c">$7.532</span></td><td class="r">$2.000</td><td><span class="ad-status s-active">Activo</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Acciones</div>
+        <div class="actions">
+          <div class="action-chip chip-red"><span class="chip-icon">⛔</span><span>Pausar grupos RM/no RM y el video — libera $9.000/día</span></div>
+          <div class="action-chip chip-green"><span class="chip-icon">🔼</span><span>Concentrar en DCMDI1AR2: subir a $12.000/día</span></div>
+          <div class="action-chip chip-blue"><span class="chip-icon">🎨</span><span>Crear variación de Asp|2 y Asp|3 — los mejores creativos del programa</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMUNICACIONES INTERNAS -->
+  <div class="prog-card" id="comint">
+    <div class="prog-header" onclick="toggle(this)">
+      <div class="prog-left">
+        <div class="prog-icon" style="background:rgba(251,191,36,0.08)">📣</div>
+        <div>
+          <div class="prog-name">Comunicaciones Internas</div>
+          <div class="prog-code">DCOIN1AR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="prog-stats">
+          <div class="stat-block"><div class="stat-val" style="color:var(--yellow)">86</div><div class="stat-lbl">Leads</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--text)">$4.920</div><div class="stat-lbl">CPL</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--muted)">$312K</div><div class="stat-lbl">Gasto</div></div>
+        </div>
+        <span class="prio-badge prio-revisar">Consolidar</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="prog-body">
+      <div class="prog-section">
+        <div class="section-label">Diagnóstico</div>
+        <div class="alert alert-yellow"><strong>🔎 CINTER1 carga el 71% de los leads a $3.053 CPL.</strong> Los grupos RM/no RM ($2.000/día c/u) tienen CPL mucho más alto ($4.975 y $5.495). El problema: $4.000/día total en grupos geográficos sin suficiente presupuesto para aprender. CINTER2 inactivo fue el mejor ad set secundario.</div>
+        <div class="alert alert-blue"><strong>💡 El creativo InforSP|4 es el ganador oculto.</strong> $2.966 CPL con 7 leads — el mejor de los anuncios activos de este programa. InforSP|1 tiene $15.458 CPL y debería pausarse.</div>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Anuncios activos — ranking</div>
+        <table class="ad-table">
+          <thead><tr><th>Anuncio</th><th class="r">Leads</th><th class="r">CPL</th><th class="r">CTR</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr style="background:rgba(52,211,153,0.03)"><td class="ad-name">DCOIN1AR|Img|InforSP|4 ⭐</td><td class="r">7</td><td class="r"><span class="cpl-badge cpl-b">$2.966</span></td><td class="r">0.51%</td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">DCOIN1AR|Img|InforSP|3</td><td class="r">8</td><td class="r"><span class="cpl-badge cpl-b">$3.917</span></td><td class="r">0.43%</td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">DCOIN1AR|Img|InforSP|2</td><td class="r">3</td><td class="r"><span class="cpl-badge cpl-c">$6.323</span></td><td class="r">0.63%</td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr style="background:rgba(251,113,133,0.03)"><td class="ad-name">DCOIN1AR|Img|InforSP|1 ⚠️</td><td class="r">1</td><td class="r"><span class="cpl-badge cpl-c">$15.458</span></td><td class="r">0.38%</td><td><span class="ad-status s-active">Activo</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Acciones</div>
+        <div class="actions">
+          <div class="action-chip chip-red"><span class="chip-icon">⛔</span><span>Pausar InforSP|1 — $15.458 CPL no tiene sentido</span></div>
+          <div class="action-chip chip-green"><span class="chip-icon">🔼</span><span>Consolidar en CINTER1 — subir a $10.000/día</span></div>
+          <div class="action-chip chip-blue"><span class="chip-icon">🎨</span><span>Crear variación de InforSP|4 — el mejor ángulo activo</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- E-LEARNING -->
+  <div class="prog-card" id="elearning">
+    <div class="prog-header" onclick="toggle(this)">
+      <div class="prog-left">
+        <div class="prog-icon" style="background:rgba(251,113,133,0.08)">💻</div>
+        <div>
+          <div class="prog-name">E-learning (DELEA)</div>
+          <div class="prog-code">DELEA1AR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="prog-stats">
+          <div class="stat-block"><div class="stat-val" style="color:var(--red)">82</div><div class="stat-lbl">Leads</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--text)">$7.475</div><div class="stat-lbl">CPL</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--muted)">$613K</div><div class="stat-lbl">Gasto</div></div>
+        </div>
+        <span class="prio-badge prio-pausar">Reestructurar</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="prog-body">
+      <div class="prog-section">
+        <div class="section-label">Diagnóstico</div>
+        <div class="alert alert-red"><strong>🚨 DELEA1AR2 gasta $25.000/día con CPL de $12.232.</strong> 16 leads en el período por $195K CLP. Este ad set es el principal responsable del CPL alto del programa. Debe pausarse.</div>
+        <div class="alert alert-yellow"><strong>🔎 Los creativos "ST" recientes muestran potencial.</strong> InforSP|3 ST ($586 CPL), InforCP|1A ST ($942 CPL) e InforCP|4B ST ($2.693 CPL) son eficientes pero tienen muy poco gasto aún. DELEA1AR3 (inicio 20 mar, solo 9 días) está aprendiendo todavía.</div>
+        <div class="alert alert-blue"><strong>💡 Hipótesis:</strong> El ángulo ST (storytelling) funciona mejor para E-learning que el formato InforSP tradicional. Concentrar en estos creativos y darles presupuesto para aprender.</div>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Anuncios — mejores y peores</div>
+        <table class="ad-table">
+          <thead><tr><th>Anuncio</th><th>Ad Set</th><th class="r">Leads</th><th class="r">CPL</th><th class="r">CTR</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr style="background:rgba(52,211,153,0.03)"><td class="ad-name">DELEA1AR|Img|InforSP|3 ⭐</td><td style="font-size:11px;color:var(--muted)">AR3</td><td class="r">1</td><td class="r"><span class="cpl-badge cpl-a">$586</span></td><td class="r">0.99%</td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr style="background:rgba(52,211,153,0.03)"><td class="ad-name">DELEA1AR|Img|InforCP|1A|ST ⭐</td><td style="font-size:11px;color:var(--muted)">AR3</td><td class="r">1</td><td class="r"><span class="cpl-badge cpl-a">$942</span></td><td class="r">0.81%</td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">DELEA1AR|Img|InforCP|4B|ST</td><td style="font-size:11px;color:var(--muted)">AR3</td><td class="r">3</td><td class="r"><span class="cpl-badge cpl-b">$2.693</span></td><td class="r">0.91%</td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr><td class="ad-name">DELEA1AR|Img|InforCP|3A|ST</td><td style="font-size:11px;color:var(--muted)">AR3</td><td class="r">37</td><td class="r"><span class="cpl-badge cpl-c">$6.219</span></td><td class="r">0.43%</td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr style="background:rgba(251,113,133,0.03)"><td class="ad-name">DELEA1AR|Img|InforSP|2 ⚠️</td><td style="font-size:11px;color:var(--muted)">AR2</td><td class="r">9</td><td class="r"><span class="cpl-badge cpl-c">$13.764</span></td><td class="r">0.43%</td><td><span class="ad-status s-active">Activo</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Acciones</div>
+        <div class="actions">
+          <div class="action-chip chip-red"><span class="chip-icon">⛔</span><span>Pausar DELEA1AR2 completo — libera $25.000/día</span></div>
+          <div class="action-chip chip-green"><span class="chip-icon">🔼</span><span>Concentrar en DELEA1AR3 — subir a $60-70K/día con los creativos ST</span></div>
+          <div class="action-chip chip-blue"><span class="chip-icon">🧪</span><span>Esperar 7 días más con AR3 antes de optimizar — aún está aprendiendo</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPLIANCE -->
+  <div class="prog-card" id="compliance">
+    <div class="prog-header" onclick="toggle(this)">
+      <div class="prog-left">
+        <div class="prog-icon" style="background:rgba(251,113,133,0.08)">🛡️</div>
+        <div>
+          <div class="prog-name">Compliance</div>
+          <div class="prog-code">DCIGR1AR</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div class="prog-stats">
+          <div class="stat-block"><div class="stat-val" style="color:var(--red)">50</div><div class="stat-lbl">Leads</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--text)">$9.585</div><div class="stat-lbl">CPL</div></div>
+          <div class="stat-block"><div class="stat-val" style="color:var(--muted)">$479K</div><div class="stat-lbl">Gasto</div></div>
+        </div>
+        <span class="prio-badge prio-pausar">Pausar carousel</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="prog-body">
+      <div class="prog-section">
+        <div class="section-label">Diagnóstico</div>
+        <div class="alert alert-red"><strong>🚨 El carousel DCIGR1AR|Car gasta $10.000/día generando leads a $14.213-$23.216 CPL.</strong> Este formato no funciona para Compliance. Los ad sets de imagen generan leads a $7.234 CPL en el peor caso — que es malo, pero 2x más eficiente que el carousel.</div>
+        <div class="alert alert-yellow"><strong>🔎 Los ad sets inactivos de imagen tenían mejor rendimiento.</strong> DIPCOMPL2 inactivo logró CPL de $4.338 — mucho mejor que el CPL actual de $7.234 del activo. Algo cambió cuando se desactivaron esos ad sets.</div>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Ad Sets — comparativa</div>
+        <table class="ad-table">
+          <thead><tr><th>Ad Set</th><th class="r">Leads</th><th class="r">CPL</th><th class="r">Ppto/día</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td class="ad-name">DIPCOMPL2 (inactivo)</td><td class="r">5</td><td class="r"><span class="cpl-badge cpl-b">$4.338</span></td><td class="r">$3.125</td><td><span class="ad-status s-inactive">Inactivo</span></td></tr>
+            <tr><td class="ad-name">DIPCOMPL2 (activo)</td><td class="r">26</td><td class="r"><span class="cpl-badge cpl-c">$7.234</span></td><td class="r">$6.250</td><td><span class="ad-status s-active">Activo</span></td></tr>
+            <tr style="background:rgba(251,113,133,0.04)"><td class="ad-name">DCIGR1AR|Car|InforCP|5 ⚠️</td><td class="r">14</td><td class="r"><span class="cpl-badge cpl-c">$16.786</span></td><td class="r">$10.000</td><td><span class="ad-status s-active">Activo</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prog-section">
+        <div class="section-label">Acciones</div>
+        <div class="actions">
+          <div class="action-chip chip-red"><span class="chip-icon">⛔</span><span>Pausar carousel hoy — $10.000/día con el peor CPL de la cuenta</span></div>
+          <div class="action-chip chip-yellow"><span class="chip-icon">🔁</span><span>Reactivar DIPCOMPL2 (inactivo) — tenía el mejor CPL del programa</span></div>
+          <div class="action-chip chip-blue"><span class="chip-icon">🎨</span><span>Probar nuevo ángulo creativo — el targeting de Compliance es correcto, el formato falla</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-txt">MÁS Educación Continua UNIACC · Meta Ads Manager · 28 Feb – 29 Mar 2026</div>
+    <div class="footer-txt">Análisis generado con Claude · 30 Mar 2026</div>
+  </footer>
+
+</main>
+</div>
+
+<script>
+function toggle(header) {
+  const card = header.closest('.prog-card');
+  card.classList.toggle('open');
+}
+
+// Highlight active sidebar item on scroll
+const sections = document.querySelectorAll('.prog-card');
+const navItems = document.querySelectorAll('.nav-item');
+
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    const top = s.getBoundingClientRect().top;
+    if (top < 120) current = s.id;
+  });
+  navItems.forEach(n => {
+    n.classList.toggle('active', n.getAttribute('href') === '#' + current);
+  });
+});
+</script>
+</body>
+</html>
