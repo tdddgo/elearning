@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MÁS UNIACC — Meta Ads Dashboard Mar 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0f;
+    --surface: #111318;
+    --surface2: #1a1d25;
+    --border: #252830;
+    --text: #e8eaf0;
+    --text-muted: #6b7280;
+    --text-dim: #3d4251;
+    --accent: #4ade80;
+    --accent2: #facc15;
+    --danger: #f87171;
+    --warn: #fb923c;
+    --blue: #60a5fa;
+    --mono: 'DM Mono', monospace;
+    --head: 'Syne', sans-serif;
+    --body: 'Outfit', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* GRID NOISE BG */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: 
+      linear-gradient(rgba(74,222,128,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74,222,128,0.02) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* HEADER */
+  header {
+    padding: 36px 0 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .header-inner { display: flex; align-items: flex-end; justify-content: space-between; }
+  .brand-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-family: var(--head);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+  .period {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  /* KPI CARDS */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .kpi:hover { border-color: var(--accent); }
+  .kpi::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--kpi-color, var(--accent));
+    opacity: 0.6;
+  }
+  .kpi-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .kpi-val {
+    font-family: var(--head);
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--kpi-color, var(--text));
+    line-height: 1;
+  }
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  /* SECTION TITLES */
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: var(--head);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .section-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  /* FILTER TABS */
+  .filters {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .filter-btn {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 500; }
+  .filter-btn.warn.active { background: var(--accent2); border-color: var(--accent2); }
+  .filter-btn.danger.active { background: var(--danger); border-color: var(--danger); }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 400;
+  }
+  th.num { text-align: right; }
+  td {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+  td.num { text-align: right; font-family: var(--mono); font-size: 12px; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background 0.12s; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr.hidden { display: none; }
+
+  .prog-name { font-weight: 500; color: var(--text); }
+  .prog-code { font-family: var(--mono); font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+  /* SEMAFORO */
+  .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  .dot-green { background: var(--accent); box-shadow: 0 0 6px rgba(74,222,128,0.5); }
+  .dot-yellow { background: var(--accent2); box-shadow: 0 0 6px rgba(250,204,21,0.5); }
+  .dot-red { background: var(--danger); box-shadow: 0 0 6px rgba(248,113,113,0.5); }
+
+  /* CPL BADGE */
+  .cpl-chip {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: inline-block;
+  }
+  .cpl-green { background: rgba(74,222,128,0.1); color: var(--accent); border: 1px solid rgba(74,222,128,0.2); }
+  .cpl-yellow { background: rgba(250,204,21,0.08); color: var(--accent2); border: 1px solid rgba(250,204,21,0.2); }
+  .cpl-red { background: rgba(248,113,113,0.08); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); }
+
+  /* BAR CELL */
+  .bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .bar-track { flex: 1; height: 4px; background: var(--border); border-radius: 2px; }
+  .bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+  .bar-num { font-family: var(--mono); font-size: 11px; color: var(--text-muted); width: 36px; text-align: right; }
+
+  /* ALERT TAG */
+  .tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .tag-escalar { background: rgba(74,222,128,0.1); color: var(--accent); border: 1px solid rgba(74,222,128,0.15); }
+  .tag-revisar { background: rgba(250,204,21,0.08); color: var(--accent2); border: 1px solid rgba(250,204,21,0.15); }
+  .tag-pausar { background: rgba(248,113,113,0.08); color: var(--danger); border: 1px solid rgba(248,113,113,0.15); }
+  .tag-atención { background: rgba(251,146,60,0.08); color: var(--warn); border: 1px solid rgba(251,146,60,0.15); }
+
+  /* OPORTUNIDADES */
+  .opps-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 40px;
+  }
+  .opp-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    border-left: 3px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .opp-card:hover { transform: translateX(2px); }
+  .opp-card.red { border-left-color: var(--danger); }
+  .opp-card.green { border-left-color: var(--accent); }
+  .opp-card.yellow { border-left-color: var(--accent2); }
+  .opp-card.orange { border-left-color: var(--warn); }
+
+  .opp-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; gap: 10px; }
+  .opp-title { font-weight: 600; font-size: 13px; color: var(--text); line-height: 1.3; }
+  .opp-body { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .opp-impact {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .opp-impact span { color: var(--text-muted); }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 0;
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-text { font-family: var(--mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.1em; }
+
+  /* FREQUENCY WARNING */
+  .freq-warn {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--warn);
+    background: rgba(251,146,60,0.06);
+    border: 1px solid rgba(251,146,60,0.15);
+    border-radius: 4px;
+    padding: 2px 6px;
+    display: inline-block;
+  }
+
+  /* ANIMATION */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .kpi { animation: fadeUp 0.4s ease both; }
+  .kpi:nth-child(1) { animation-delay: 0.05s; }
+  .kpi:nth-child(2) { animation-delay: 0.1s; }
+  .kpi:nth-child(3) { animation-delay: 0.15s; }
+  .kpi:nth-child(4) { animation-delay: 0.2s; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-inner">
+      <div>
+        <div class="brand-tag">MÁS Educación Continua · Meta Ads</div>
+        <h1>Dashboard de Performance</h1>
+      </div>
+      <div class="period">28 Feb — 29 Mar 2026</div>
+    </div>
+  </header>
+
+  <!-- KPI CARDS -->
+  <div class="kpis">
+    <div class="kpi" style="--kpi-color: var(--accent)">
+      <div class="kpi-label">Total Leads</div>
+      <div class="kpi-val">1.906</div>
+      <div class="kpi-sub">15 programas activos</div>
+    </div>
+    <div class="kpi" style="--kpi-color: var(--blue)">
+      <div class="kpi-label">Gasto Total</div>
+      <div class="kpi-val">$4,96M</div>
+      <div class="kpi-sub">CLP · período de 30 días</div>
+    </div>
+    <div class="kpi" style="--kpi-color: var(--accent2)">
+      <div class="kpi-label">CPL Promedio</div>
+      <div class="kpi-val">$2.600</div>
+      <div class="kpi-sub">CLP por lead</div>
+    </div>
+    <div class="kpi" style="--kpi-color: var(--danger)">
+      <div class="kpi-label">Gasto en Rojo</div>
+      <div class="kpi-val">$1,87M</div>
+      <div class="kpi-sub">CPL > $5.000 · 4 programas</div>
+    </div>
+  </div>
+
+  <!-- TABLA PERFORMANCE -->
+  <div class="section-head">
+    <div class="section-title">Performance por Programa</div>
+    <div class="section-badge">Ad sets · agrupado</div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="filterTable('all', this)">Todos</button>
+    <button class="filter-btn" onclick="filterTable('green', this)">🟢 Óptimo</button>
+    <button class="filter-btn warn" onclick="filterTable('yellow', this)">🟡 Revisar</button>
+    <button class="filter-btn danger" onclick="filterTable('red', this)">🔴 Urgente</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Programa</th>
+          <th class="num">Leads</th>
+          <th class="num">Gasto CLP</th>
+          <th class="num">CPL</th>
+          <th>Volumen</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+      </tbody>
+    </table>
+  </div>
+
+  <!-- OPORTUNIDADES -->
+  <div class="section-head">
+    <div class="section-title">Oportunidades de Mejora</div>
+    <div class="section-badge">7 acciones identificadas</div>
+  </div>
+
+  <div class="opps-grid">
+
+    <div class="opp-card red">
+      <div class="opp-header">
+        <div class="opp-title">Pausar Brand / MÁS General inmediatamente</div>
+        <span class="tag tag-pausar">Pausar</span>
+      </div>
+      <div class="opp-body">La campaña 26|MASUNIACC|Lead genera leads a $19.017 CLP — el CPL más alto de la cuenta. 3 ad sets gastando $551.505 CLP por apenas 29 leads. Presupuesto que se puede redirigir a programas probados.</div>
+      <div class="opp-impact">💸 <span>Gasto rescatable:</span> ~$551.000 CLP/mes</div>
+    </div>
+
+    <div class="opp-card red">
+      <div class="opp-header">
+        <div class="opp-title">Compliance: Parar el carousel DCIGR1AR</div>
+        <span class="tag tag-pausar">Pausar</span>
+      </div>
+      <div class="opp-body">El ad set <strong>DCIGR1AR|Car|InforCP|5|MIX</strong> gasta $234.999 CLP por solo 14 leads ($16.786 CPL). El formato carousel no funciona para Compliance. Los ad sets de imagen generan resultados a 7-8x menos costo.</div>
+      <div class="opp-impact">🎯 <span>Leads recuperables si se concentra en imagen:</span> +20-30 leads/mes</div>
+    </div>
+
+    <div class="opp-card green">
+      <div class="opp-header">
+        <div class="opp-title">Escalar Lengua de Señas urgente</div>
+        <span class="tag tag-escalar">Escalar</span>
+      </div>
+      <div class="opp-body">CPL de <strong>$360 CLP</strong> — el mejor de toda la cuenta. Ambos ad sets están en <em>not_delivering</em>, probablemente por presupuesto agotado. Reactivar y aumentar el presupuesto diario al menos 2x. El programa cierra fechas pronto.</div>
+      <div class="opp-impact">🚀 <span>Potencial:</span> 300+ leads adicionales con $150K CLP extra</div>
+    </div>
+
+    <div class="opp-card green">
+      <div class="opp-header">
+        <div class="opp-title">Escalar Crítica de Cine y Psicólogos</div>
+        <span class="tag tag-escalar">Escalar</span>
+      </div>
+      <div class="opp-body"><strong>Crítica de Cine</strong> ($721 CPL) y <strong>Marca Personal Psicólogos</strong> ($1.017 CPL) tienen los mejores ratios activos de la cuenta. Ambos tienen headroom para escalar 30-50% de presupuesto con bajo riesgo de CPL inflation.</div>
+      <div class="opp-impact">🚀 <span>Presupuesto sugerido:</span> +$50K CLP/día en cada uno</div>
+    </div>
+
+    <div class="opp-card red">
+      <div class="opp-header">
+        <div class="opp-title">E-learning necesita rediseño de estrategia</div>
+        <span class="tag tag-revisar">Revisar</span>
+      </div>
+      <div class="opp-body">$628.982 CLP gastados, 82 leads, CPL $7.671. Los 3 ad sets activos tienen resultados dispares. <strong>DELEA1AR3</strong> (el más nuevo, iniciado el 20 mar) es el más eficiente a $5.876 CPL y aún tiene margen de aprendizaje. Pausar DELEA1AR1 (inactivo) y DELEA1AR2.</div>
+      <div class="opp-impact">🔧 <span>Concentrar $45K presupuesto en DELEA1AR3 solamente</span></div>
+    </div>
+
+    <div class="opp-card yellow">
+      <div class="opp-header">
+        <div class="opp-title">Frecuencia alta en Psicoterapia Online</div>
+        <span class="tag tag-atención">Frecuencia</span>
+      </div>
+      <div class="opp-body">DIPSICONL1 tiene frecuencia de <strong>5.07</strong> — señal de fatiga creativa. Con el mismo presupuesto ($22.000/día) el CPL subirá si no se rota la creatividad. Agregar 2-3 anuncios nuevos al ad set activo esta semana.</div>
+      <div class="opp-impact">⚠️ <span>Actualmente 105 leads, potencial de caída si no se actúa</span></div>
+    </div>
+
+    <div class="opp-card yellow">
+      <div class="opp-header">
+        <div class="opp-title">Marketing Digital: consolidar ad sets</div>
+        <span class="tag tag-revisar">Revisar</span>
+      </div>
+      <div class="opp-body">5 ad sets activos para DCMDI1AR con $426K gastados y CPL promedio de $3.614. Hay fragmentación de presupuesto. Los grupos RM/no RM y el video DCMDI1AR|Vid tienen CPL muy alto ($3.889-$7.532). Consolidar en 2 ad sets máximo.</div>
+      <div class="opp-impact">🔧 <span>Conservar DCMDI1AR2 y DCMDI1AR3 · pausar el resto</span></div>
+    </div>
+
+    <div class="opp-card orange">
+      <div class="opp-header">
+        <div class="opp-title">Storytelling Jurídico: bajo volumen</div>
+        <span class="tag tag-atención">Volumen</span>
+      </div>
+      <div class="opp-body">Solo 35 leads en el período con inicio el 18 marzo (11 días de datos). CPL de $2.697 aceptable pero volumen muy bajo para el inicio del programa. Revisar si el presupuesto ($7.692/día) es suficiente para la fecha de cierre de campaña (15 días antes de mayo 15).</div>
+      <div class="opp-impact">📅 <span>Queda ~31 días de campaña · necesita escalar para cumplir meta</span></div>
+    </div>
+
+  </div>
+
+  <footer>
+    <div class="footer-text">MÁS Educación Continua UNIACC · Datos: Meta Ads Manager</div>
+    <div class="footer-text">Generado con Claude · 30 Mar 2026</div>
+  </footer>
+
+</div>
+
+<script>
+const programs = [
+  { name: 'Lengua de Señas', code: 'CLSCI1AR / CDHCL1AR', leads: 264, gasto: 94909, freq: 1.7, status: 'green', accion: 'escalar', note: 'not_delivering' },
+  { name: 'Crítica de Cine', code: 'CACCI1AR', leads: 128, gasto: 92259, freq: 3.2, status: 'green', accion: 'escalar', note: '' },
+  { name: 'Marca Personal Psicólogos', code: 'CMPPR1AR', leads: 175, gasto: 177981, freq: 3.9, status: 'green', accion: 'escalar', note: '' },
+  { name: 'Home Studio', code: 'CHAMI1AR', leads: 247, gasto: 311978, freq: 4.3, status: 'green', accion: 'mantener', note: '' },
+  { name: 'Derecho de Familia', code: 'DDFMI1AR', leads: 206, gasto: 402310, freq: 3.9, status: 'green', accion: 'mantener', note: '' },
+  { name: 'Dinámica Escénica', code: 'DDESE1SR', leads: 250, gasto: 509137, freq: 3.3, status: 'yellow', accion: 'mantener', note: '' },
+  { name: 'Curso IA', code: 'CIAHD1AR', leads: 87, gasto: 180169, freq: 2.9, status: 'yellow', accion: 'mantener', note: '' },
+  { name: 'Storytelling Jurídico', code: 'TSJAN1DR', leads: 35, gasto: 94385, freq: 2.9, status: 'yellow', accion: 'revisar', note: 'bajo volumen' },
+  { name: 'Psicoterapia Online', code: 'DPODA1AR', leads: 139, gasto: 480823, freq: 5.1, status: 'yellow', accion: 'revisar', note: 'frecuencia alta' },
+  { name: 'Marketing Digital', code: 'DCMDI1AR', leads: 118, gasto: 426496, freq: 3.2, status: 'yellow', accion: 'revisar', note: 'consolidar' },
+  { name: 'Comunicaciones Internas', code: 'DCOIN1AR', leads: 86, gasto: 312321, freq: 2.5, status: 'yellow', accion: 'revisar', note: '' },
+  { name: 'E-learning', code: 'DELEA1AR', leads: 82, gasto: 628982, freq: 2.8, status: 'red', accion: 'revisar', note: 'rediseño' },
+  { name: 'Compliance', code: 'DCIGR1AR', leads: 49, gasto: 502192, freq: 3.2, status: 'red', accion: 'pausar parcial', note: 'parar carousel' },
+  { name: 'PSIDIP26 Psicología', code: 'PSIDIP26', leads: 11, gasto: 190914, freq: 2.8, status: 'red', accion: 'evaluar', note: 'not_delivering' },
+  { name: 'Brand / MÁS General', code: 'Brand campaigns', leads: 29, gasto: 551505, freq: 3.4, status: 'red', accion: 'pausar', note: '' },
+];
+
+const maxLeads = Math.max(...programs.map(p => p.leads));
+const maxGasto = Math.max(...programs.map(p => p.gasto));
+
+function fmt(n) { return n.toLocaleString('es-CL'); }
+
+function cplClass(cpl) {
+  if (cpl < 2000) return 'cpl-green';
+  if (cpl < 5000) return 'cpl-yellow';
+  return 'cpl-red';
+}
+
+function barColor(status) {
+  if (status === 'green') return '#4ade80';
+  if (status === 'yellow') return '#facc15';
+  return '#f87171';
+}
+
+function accionTag(accion) {
+  if (accion.includes('escalar')) return '<span class="tag tag-escalar">Escalar</span>';
+  if (accion.includes('pausar')) return '<span class="tag tag-pausar">Pausar</span>';
+  if (accion.includes('revisar')) return '<span class="tag tag-revisar">Revisar</span>';
+  return '<span class="tag" style="background:rgba(107,114,128,0.08);color:#6b7280;border:1px solid #252830">Mantener</span>';
+}
+
+function noteHtml(p) {
+  if (!p.note) return '';
+  if (p.note === 'not_delivering') return ' <span class="freq-warn">paused</span>';
+  if (p.note === 'frecuencia alta') return ` <span class="freq-warn">freq ${p.freq.toFixed(1)}</span>`;
+  return ` <span class="freq-warn">${p.note}</span>`;
+}
+
+function renderTable(filter) {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = programs.map(p => {
+    const cpl = Math.round(p.gasto / p.leads);
+    const leadPct = Math.round((p.leads / maxLeads) * 100);
+    const dotClass = `dot-${p.status}`;
+    const hidden = (filter !== 'all' && p.status !== filter) ? 'hidden' : '';
+
+    return `<tr class="${hidden}" data-status="${p.status}">
+      <td>
+        <div class="prog-name"><span class="dot ${dotClass}"></span>${p.name}${noteHtml(p)}</div>
+        <div class="prog-code">${p.code}</div>
+      </td>
+      <td class="num">${fmt(p.leads)}</td>
+      <td class="num">$${fmt(p.gasto)}</td>
+      <td class="num"><span class="cpl-chip ${cplClass(cpl)}">$${fmt(cpl)}</span></td>
+      <td style="width:160px">
+        <div class="bar-wrap">
+          <div class="bar-track"><div class="bar-fill" style="width:${leadPct}%;background:${barColor(p.status)}"></div></div>
+          <div class="bar-num">${leadPct}%</div>
+        </div>
+      </td>
+      <td>${p.status === 'green' ? '🟢 Óptimo' : p.status === 'yellow' ? '🟡 Revisar' : '🔴 Urgente'}</td>
+      <td>${accionTag(p.accion)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable(filter, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable(filter);
+}
+
+renderTable('all');
+</script>
+</body>
+</html>
